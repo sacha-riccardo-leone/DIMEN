@@ -7,7 +7,7 @@ namespace DIMEN
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static unsafe void Main(string[] args)
         {
             // Initialisation
             InitWindow(1600, 900, "Raylib 3D in C#");
@@ -15,91 +15,129 @@ namespace DIMEN
             // Désactiver le curseur
             DisableCursor();
 
+            // Charger le modèle et initialiser le matériau
+            Mesh cubeMesh = GenMeshCube(1f, 1f, 1f);
+            Model cubeModel = LoadModelFromMesh(cubeMesh); // Charger le modèle
+            Material cubeMaterial = cubeModel.Materials[0]; // Récupérer le matériau par défaut
+
+            // Position initiale du cube (le joueur)
+            Vector3 playerPosition = new Vector3(0, 1, 0); // Position du joueur
+            Vector3 cubePosition = new Vector3(3, 1, 3);   // Position d'un autre cube
+
+            // Charger les textures
+            Texture2D baseColor = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_BaseColor.jpg");
+            Texture2D normalMap = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_Normal.png");
+            Texture2D metallicMap = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_Metallic.jpg");
+            Texture2D roughnessMap = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_Roughness.jpg");
+
+            // Appliquer les textures au matériau
+            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Albedo, baseColor); // Couleur de base
+            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Normal, normalMap); // Carte de normal
+            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Metalness, metallicMap); // Métallique
+            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Roughness, roughnessMap); // Rugosité
+            SetMaterialTexture(ref cubeModel, 0, MaterialMapIndex.Albedo, ref baseColor);
+
+            // Charger le shader pour la lumière
+            Shader lightingShader = LoadShader("assets/shaders/lighting.vs", "assets/shaders/lighting.fs");
+            SetMaterialShader(ref cubeModel, 0, ref lightingShader);
+            // Configurer la lumière
+            int lightLoc = GetShaderLocation(lightingShader, "lightPosition");
+            Vector3 lightPosition = new Vector3(5, 5, 5);
+            SetShaderValue(lightingShader, lightLoc, lightPosition, ShaderUniformDataType.Vec3);
+
+            // Variable pour suivre si on est en mode vue de dessus
+            bool isTopView = false;
+
             // Configuration de la caméra
             Camera3D camera = new Camera3D
             {
-                Position = new Vector3(10, 10, 10.0f), // Position de la caméra
+                Position = new Vector3(10, 10, 10), // Position de la caméra
                 Target = new Vector3(0.0f, 0.0f, 0.0f), // Point regardé
                 Up = new Vector3(0.0f, 1.0f, 0.0f),    // Orientation "haut"
                 FovY = 45.0f,                           // Champ de vision
                 Projection = CameraProjection.Perspective  // Perspective
             };
 
-            // Position initiale du cube (le joueur)
-            Vector3 playerPosition = new Vector3(0, 1, 0); // Position du cube
-            Vector3 cubePosition = new Vector3(3, 1, 3);   // Position du cube
-            float rotationAngle = 0f; // Angle de rotation du cube
-            float targetRotationAngle = 0f; // Angle cible
-            float rotationProgress = 0f; // Progression de la transition
-            float rotationDuration = 0.5f; // Durée de la transition en secondes
-            float elapsedTime = 0f; // Temps écoulé
+            // Variables pour la rotation fluide
+            float targetRotationAngle = 0f; // Angle cible de rotation
+            float currentRotationAngle = 0f; // Angle actuel de la caméra
+            float rotationSpeed = 5f;       // Vitesse de rotation (degrés par seconde)
 
             while (!WindowShouldClose())
             {
                 // Calculer le temps écoulé depuis le dernier frame
                 float deltaTime = GetFrameTime();
-                elapsedTime += deltaTime;
-
+                // Basculer la vue lorsque la touche Q est pressée
+                if (IsKeyPressed(KeyboardKey.Q))
+                {
+                    isTopView = !isTopView; // Alterner entre vue normale et vue de dessus
+                }
                 // Vérifier si la touche espace est pressée pour faire tourner le joueur
-                if (IsKeyPressed(KeyboardKey.Space))
+                if (IsKeyPressed(KeyboardKey.Space) && !isTopView)
                 {
                     targetRotationAngle += 90f; // Tourner de +90 degrés
-                    if (targetRotationAngle > 360f) targetRotationAngle -= 360f; // Réinitialiser l'angle à 0 après 360°
-                    rotationProgress = 0f; // Réinitialiser la progression
-                    elapsedTime = 0f; // Réinitialiser le temps écoulé
+                    // Ne pas réinitialiser l'angle à 0 à chaque fois, laisser l'angle augmenter
                 }
 
-                // Interpolation entre l'angle actuel et l'angle cible
-                if (elapsedTime < rotationDuration)
-                {
-                    rotationProgress = elapsedTime / rotationDuration; // Progression de la transition
-                }
-                else
-                {
-                    rotationProgress = 1f; // Lorsque la durée est terminée, la transition est complète
-                }
-
-                // Calculer l'angle de rotation interpolé
-                rotationAngle = Raymath.Lerp(rotationAngle, targetRotationAngle, rotationProgress);
-
-                // Calculer la rotation sur le joueur (playerPosition)
-                float radians = MathF.PI * rotationAngle / 180f; // Conversion de l'angle en radians
-
+                // Interpolation fluide entre l'angle actuel et l'angle cible
+                currentRotationAngle = Raymath.Lerp(currentRotationAngle, targetRotationAngle, rotationSpeed * deltaTime);
+                // Calculer l'angle de rotation sur le joueur (playerPosition)
+                float radians = MathF.PI * currentRotationAngle / 180f; // Conversion de l'angle en radians
                 // Déterminer la direction de mouvement en fonction de l'angle de rotation
                 Vector3 moveDirection = new Vector3(MathF.Sin(radians), 0, MathF.Cos(radians));
 
-                // Appliquer le mouvement du joueur
-                if (IsKeyDown(KeyboardKey.W)) playerPosition += moveDirection * 0.1f; // Déplacement en avant
-                if (IsKeyDown(KeyboardKey.S)) playerPosition -= moveDirection * 0.1f; // Déplacement en arrière
+                // Calculer la direction de mouvement à gauche et à droite
+                Vector3 moveDirectionRight = new Vector3(MathF.Cos(radians), 0, -MathF.Sin(radians));  // Droite
+                Vector3 moveDirectionLeft = new Vector3(-MathF.Cos(radians), 0, MathF.Sin(radians));  // Gauche
 
-                // Mises à jour de la caméra pour suivre le joueur
-                Vector3 cameraOffset = new Vector3(10.0f, 5.0f, 10.0f); // Décalage de la caméra par rapport au joueur
-                camera.Position = playerPosition + cameraOffset;
-                camera.Target = playerPosition; // La caméra regarde toujours le joueur
+                // Déplacement du joueur à gauche et à droite
+                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Left)) playerPosition += moveDirectionRight * 0.1f; // Déplacement à droite
+                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Right)) playerPosition += moveDirectionLeft * 0.1f; // Déplacement à gauche
 
-                // Mises à jour de la caméra
-                UpdateCamera(ref camera, CameraMode.Orbital);
+                if (isTopView)
+                {
+                    // Vue depuis le dessus
+                    camera.Position = new Vector3(playerPosition.X, 10.0f, playerPosition.Z); // Position en hauteur au-dessus du joueur
+                    camera.Target = new Vector3(playerPosition.X, 0.0f, playerPosition.Z);  // La caméra regarde le sol
+                    camera.Up = new Vector3(0.0f, 0.0f, 1.0f); // Orientation "haut" de la caméra (la caméra regarde vers le bas)
+                    if (IsKeyDown(KeyboardKey.W)) playerPosition += moveDirection * 0.1f; // Déplacement en avant
+                    if (IsKeyDown(KeyboardKey.S)) playerPosition -= moveDirection * 0.1f; // Déplacement en arrière
+
+                }
+                else
+                {
+                    isTopView = false;
+                    // Vue normale derrière le joueur
+                    Vector3 cameraOffset = new Vector3(
+                        -MathF.Sin(radians) * 10.0f,
+                        1.0f,
+                        -MathF.Cos(radians) * 10.0f
+                    );
+                    camera.Position = playerPosition + cameraOffset; // Position de la caméra
+                    camera.Target = playerPosition; // La caméra regarde toujours le joueur
+                    camera.Up = new Vector3(0.0f, 1.0f, 0.0f);    // Orientation "haut"
+                }
+
 
                 // Dessin
                 BeginDrawing();
                 ClearBackground(Color.RayWhite);
-
                 BeginMode3D(camera);
                 DrawGrid(30, 1.0f); // Grille de repère
+                DrawCube(cubePosition, 1.0f, 1.0f, 1.0f, Color.Red);
+                // Dessin du cube texturé
+                DrawModel(cubeModel, playerPosition, 1, Color.White);
 
-                // Dessin du cube rouge sur le plan
-                DrawCube(cubePosition, 1.0f, 1.0f, 1.0f, Color.Red); // Cube rouge représentant le joueur
-
-                // Dessiner le cube bleu qui représente la "face" du joueur
-                // La position du cube bleu est ajustée pour le placer devant le joueur
-                Vector3 rotatedPosition = playerPosition + new Vector3(MathF.Sin(radians), 0, MathF.Cos(radians)) * 1.0f;
-                DrawCube(rotatedPosition, 1.0f, 1.0f, 1.0f, Color.Blue); // Cube bleu représentant la face du joueur
                 EndMode3D();
-
                 EndDrawing();
             }
 
-            // Fermeture
+            // Déchargement des ressources
+            UnloadMaterial(cubeMaterial);
+            UnloadTexture(baseColor);
+            UnloadTexture(normalMap);
+            UnloadTexture(metallicMap);
+            UnloadTexture(roughnessMap);
             CloseWindow();
         }
     }

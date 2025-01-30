@@ -22,7 +22,7 @@ namespace DIMEN
 
             // Position initiale du cube (le joueur)
             Vector3 playerPosition = new Vector3(0, 1, 0); // Position du joueur
-            Vector3 cubePosition = new Vector3(3, 1, 3);   // Position d'un autre cube
+            Vector3 cubePosition = new Vector3(3, 4, 3);   // Position d'un autre cube
 
             // Charger les textures
             Texture2D baseColor = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_BaseColor.jpg");
@@ -90,9 +90,17 @@ namespace DIMEN
                 Vector3 moveDirectionRight = new Vector3(MathF.Cos(radians), 0, -MathF.Sin(radians));  // Droite
                 Vector3 moveDirectionLeft = new Vector3(-MathF.Cos(radians), 0, MathF.Sin(radians));  // Gauche
 
-                // Déplacement du joueur à gauche et à droite
-                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Left)) playerPosition += moveDirectionRight * 0.1f; // Déplacement à droite
-                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Right)) playerPosition += moveDirectionLeft * 0.1f; // Déplacement à gauche
+
+                Vector3 velocity = Vector3.Zero;
+
+                // Déplacement du joueur
+                if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) velocity += moveDirection * 0.1f; // Déplacement en avant
+                if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) velocity -= moveDirection * 0.1f; // Déplacement en arrière
+                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Left)) velocity += moveDirectionRight * 0.1f; // Déplacement à droite
+                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Right)) velocity += moveDirectionLeft * 0.1f; // Déplacement à gauche
+
+                playerPosition += Raymath.Vector3Normalize(velocity)/6;
+
 
                 if (isTopView)
                 {
@@ -100,9 +108,7 @@ namespace DIMEN
                     camera.Position = new Vector3(playerPosition.X, 10.0f, playerPosition.Z); // Position en hauteur au-dessus du joueur
                     camera.Target = new Vector3(playerPosition.X, 0.0f, playerPosition.Z);  // La caméra regarde le sol
                     camera.Up = new Vector3(0.0f, 0.0f, 1.0f); // Orientation "haut" de la caméra (la caméra regarde vers le bas)
-                    if (IsKeyDown(KeyboardKey.W)) playerPosition += moveDirection * 0.1f; // Déplacement en avant
-                    if (IsKeyDown(KeyboardKey.S)) playerPosition -= moveDirection * 0.1f; // Déplacement en arrière
-
+                    camera.Projection = CameraProjection.Orthographic;
                 }
                 else
                 {
@@ -116,6 +122,7 @@ namespace DIMEN
                     camera.Position = playerPosition + cameraOffset; // Position de la caméra
                     camera.Target = playerPosition; // La caméra regarde toujours le joueur
                     camera.Up = new Vector3(0.0f, 1.0f, 0.0f);    // Orientation "haut"
+                    camera.Projection = CameraProjection.Perspective;
                 }
 
 
@@ -124,7 +131,7 @@ namespace DIMEN
                 ClearBackground(Color.RayWhite);
                 BeginMode3D(camera);
                 DrawGrid(30, 1.0f); // Grille de repère
-                DrawCube(cubePosition, 1.0f, 1.0f, 1.0f, Color.Red);
+                DrawCube(cubePosition, 3.0f, 9.0f, 3.0f, Color.Gray);
                 // Dessin du cube texturé
                 DrawModel(cubeModel, playerPosition, 1, Color.White);
 

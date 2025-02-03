@@ -51,9 +51,6 @@ namespace DIMEN
                 Projection = CameraProjection.Perspective
             };
 
-            // Coefficient de frottement
-            float frictionCoefficient = 0.65f;
-
             // Variables pour la gestion du mouvement et de la rotation
             float targetRotationAngle = 0f;
             float currentRotationAngle = 0f;
@@ -62,7 +59,9 @@ namespace DIMEN
             // Variables pour la gravité et la physique
             Vector3 velocity = Vector3.Zero;
             float gravity = -9.81f;
-            float gridLevel = 1.0f;
+            float gridLevel = 0.5f;
+            // Variables de gestion de la vitesse
+            float maxSpeed = 0.005f; // Vitesse maximale du joueur
 
             // Positions des objets
             Vector3 playerPosition = new Vector3(0, 10, 0);
@@ -79,10 +78,7 @@ namespace DIMEN
             while (!WindowShouldClose())
             {
                 // Appliquer la gravité
-                velocity.Y += gravity * GetFrameTime();
-
-                // Mise à jour de la position du cube
-                playerPosition += velocity * GetFrameTime();
+                velocity.Y += gravity;
 
                 // Vérification du contact avec le sol
                 if (playerPosition.Y <= gridLevel)
@@ -118,34 +114,29 @@ namespace DIMEN
                 if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) velocity -= moveDirection * 0.1f;
                 if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) velocity -= strafeDirection * 0.1f;
                 if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) velocity += strafeDirection * 0.1f;
+                if (!IsKeyDown(KeyboardKey.W) && !IsKeyDown(KeyboardKey.S) && !IsKeyDown(KeyboardKey.A) && !IsKeyDown(KeyboardKey.D))
+                {
+                    velocity = Vector3.Zero; // Arrêter le joueur
+                }
+                // Limiter la vitesse
+                if (velocity.Length() > maxSpeed)  // Si la vitesse dépasse la vitesse maximale
+                {
+                    velocity = Vector3.Normalize(velocity) * maxSpeed; // Normaliser et appliquer la vitesse maximale
+                }
+                // Appliquer la vitesse au joueur
+                playerPosition += velocity;
 
-                // Si le joueur se déplace, applique le frottement
-                if (velocity.X != 0 || velocity.Z != 0)
-                {
-                    velocity.X *= frictionCoefficient;
-                    velocity.Z *= frictionCoefficient;
-                }
-                else
-                {
-                    // Si aucune touche n'est pressée, réduire lentement la vitesse
-                    if (Math.Abs(velocity.X) < 0.01f) velocity.X = 0;
-                    if (Math.Abs(velocity.Z) < 0.01f) velocity.Z = 0;
-                    else
-                    {
-                        velocity.X *= frictionCoefficient;
-                        velocity.Z *= frictionCoefficient;
-                    }
-                }
-                Vector3 newPosition = playerPosition + velocity;
                 // Détection de collision avec la grille (niveau Y de la grille)
-                if (newPosition.Y <= gridLevel)
+                if (playerPosition.Y <= gridLevel)
                 {
-                    newPosition.Y = gridLevel; // Empêcher de passer sous la grille
+                    playerPosition.Y = gridLevel; // Réinitialiser la position au niveau du sol
                     velocity.Y = 0; // Réinitialiser la vitesse verticale
                 }
+                Vector3 newPosition = playerPosition + velocity;
                 BoundingBox newPlayerBox = new BoundingBox(newPosition - new Vector3(0.5f), newPosition + new Vector3(0.5f));
 
-                // Détection de collision et glissade contre les parois
+
+                // COLLISION + GLISSADE CONTRE LA PAROI
                 if (CheckCollisionBoxes(newPlayerBox, cubeBox))
                 {
                     if (velocity.X != 0 && !CheckCollisionBoxes(new BoundingBox(playerPosition + new Vector3(velocity.X, 0, 0) - new Vector3(0.5f, 0.5f, 0.5f), playerPosition + new Vector3(velocity.X, 0, 0) + new Vector3(0.5f, 0.5f, 0.5f)), cubeBox))
@@ -161,8 +152,8 @@ namespace DIMEN
                 {
                     playerPosition = newPosition;
                 }
-                playerBox = new BoundingBox(playerPosition - new Vector3(0.5f, 0.5f, 0.5f), playerPosition + new Vector3(0.5f, 0.5f, 0.5f));
 
+                playerBox = new BoundingBox(playerPosition - new Vector3(0.5f, 0.5f, 0.5f), playerPosition + new Vector3(0.5f, 0.5f, 0.5f));
                 // Activer/Désactiver le mode de vue de dessus
                 if (isTopView)
                 {
@@ -194,9 +185,12 @@ namespace DIMEN
                 DrawModel(cubeModel, playerPosition, 1, Color.White);
                 DrawCubeWires(playerPosition, 1.0f, 1.0f, 1.0f, Color.Red);
                 EndMode3D();
+                // Debug
+                DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
+                DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
+                DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
                 EndDrawing();
             }
-
             // Déchargement des ressources
             UnloadMaterial(cubeMaterial);
             UnloadTexture(baseColor);

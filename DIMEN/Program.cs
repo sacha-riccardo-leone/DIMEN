@@ -2,6 +2,7 @@
 using static Raylib_cs.Raylib;
 using System.Numerics;
 using System;
+using System.Diagnostics;
 
 namespace DIMEN
 {
@@ -67,19 +68,44 @@ namespace DIMEN
             Vector3 playerPosition = new Vector3(0, 10, 0);
             Vector3 cubePosition = new Vector3(3, 4.25f, 3);
 
-            // Variables du mode plan
             bool isTopView = false;
-            float topViewDuration = 5.0f;  // Temps maximum en vue de dessus
-            float topViewTimer = 0.0f;     // Timer pour la durée de la vue de dessus
-            float topViewCooldown = 5.0f; // Temps de recharge avant de pouvoir recliquer Q
-            double lastTopViewTime = -topViewCooldown; // Stocke le temps du dernier passage en vue de dessus
+            float topViewDuration = 5.0f;
+            float topViewTimer = 0.0f;
+            float topViewCooldown = 10.0f;
+            float progress = 1.0f; // Commence rempli (prêt à être utilisé)
+            bool filling = false; // Indique si la jauge est en train de se remplir
+
+            double lastTopViewTime = -topViewCooldown;
+            double currentTime;
 
             // Boucle principale
             while (!WindowShouldClose())
             {
                 float deltaTime = GetFrameTime();
-                double currentTime = GetTime();
-                DrawBar(currentTime, lastTopViewTime, topViewCooldown, isTopView, topViewDuration, ref topViewTimer);  // Passer topViewTimer par référence
+                currentTime = GetTime();
+
+                // Gestion de la barre de progression (remplissage ou vidage)
+                if (isTopView)
+                {
+                    progress -= deltaTime / topViewDuration;
+                    if (progress <= 0.0f)
+                    {
+                        progress = 0.0f;
+                        isTopView = false;
+                        lastTopViewTime = currentTime;
+                        filling = true;
+                    }
+                }
+                else if (filling)
+                {
+                    progress += deltaTime / topViewCooldown;
+                    if (progress >= 1.0f)
+                    {
+                        progress = 1.0f;
+                        filling = false;
+                    }
+                }
+
                 // Appliquer la gravité
                 velocity.Y += gravity;
 
@@ -136,18 +162,20 @@ namespace DIMEN
 
 
                 // Changer de mode de vue (vue de dessus ou perspective)
-                if (IsKeyPressed(KeyboardKey.Q) && (currentTime - lastTopViewTime >= topViewCooldown))
+                if (IsKeyPressed(KeyboardKey.Q) && progress >= 1.0f)
                 {
-                    isTopView = !isTopView;
-                    lastTopViewTime = currentTime; // Stocke le temps du dernier passage en vue de dessus
-                    topViewTimer = 0.0f; // Réinitialise le timer si on active la vue de dessus
+                    isTopView = true;
+                    topViewTimer = 0.0f;
+                    filling = false;
                 }
+
                 if (isTopView)
                 {
                     topViewTimer += deltaTime;
                     if (topViewTimer >= topViewDuration)
                     {
                         isTopView = false; // Désactiver la vue de dessus après 5 secondes
+                        filling = true; // Démarrer le remplissage après la désactivation
                     }
                     camera.FovY = 20.0f;
                     camera.Position = new Vector3(playerPosition.X, 200.0f, playerPosition.Z);
@@ -155,7 +183,6 @@ namespace DIMEN
                     camera.Up = new Vector3(0.0f, 1.0f, 0.0f);
                     camera.Projection = CameraProjection.Orthographic;
                     float timeRemaining = MathF.Max(0, topViewDuration - topViewTimer);
-
                 }
                 else
                 {
@@ -169,8 +196,8 @@ namespace DIMEN
                     camera.Target = playerPosition;
                     camera.Up = new Vector3(0.0f, 1.0f, 0.0f);
                     camera.Projection = CameraProjection.Perspective;
-                    //DrawText($"Temps avant prochaine vue de dessus: {MathF.Max(0, topViewCooldown - (float)(currentTime - lastTopViewTime)):F1}s", 10, 110, 20, Color.Red)
                 }
+
 
                 // Dessin de la scène
                 BeginDrawing();
@@ -182,10 +209,14 @@ namespace DIMEN
                 DrawModel(cubeModel, playerPosition, 1, Color.White);
                 DrawCubeWires(playerPosition, 1.0f, 1.0f, 1.0f, Color.Red);
                 EndMode3D();
+                // Dessin de la barre de progression
+                DrawRectangle(10, 10, 200, 25, Color.LightGray);
+                DrawRectangle(10, 10, (int)(200 * progress), 25, Color.Green);
+                DrawRectangleLines(10, 10, 200, 25, Color.Black);
                 // Debug
-                DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
-                DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
-                DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
+                //DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
+                //DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
+                //DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
                 EndDrawing();
             }
             // Déchargement des ressources
@@ -195,44 +226,6 @@ namespace DIMEN
             UnloadTexture(metallicMap);
             UnloadTexture(roughnessMap);
             CloseWindow();
-        }
-        // Calculer la barre de cooldown et la mise à jour du temps
-        static void DrawBar(double currentTime, double lastTopViewTime, float topViewCooldown, bool isTopView, float topViewDuration, ref float topViewTimer)
-        {
-            // Dimensions et position de la barre de cooldown
-            int barWidth = 200;
-            int barHeight = 20;
-            int barX = 10;
-            int barY = 130;
-
-            // Calcul du pourcentage de remplissage
-            float cooldownProgress = 0.0f;
-
-            if (isTopView)
-            {
-                // Si on est en mode vue de dessus, la barre se vide
-                topViewTimer += (float)(currentTime - lastTopViewTime); // Incrémentation du timer uniquement pendant la vue de dessus
-                cooldownProgress = 1.0f - (topViewTimer / topViewDuration); // La barre se vide pendant la durée de la vue de dessus
-            }
-            else
-            {
-                // Si on n'est pas en mode vue de dessus, la barre se remplit
-                // La barre doit commencer pleine lorsque le cooldown commence
-                float timeSinceLastTopView = (float)(currentTime - lastTopViewTime);
-                if (timeSinceLastTopView >= topViewDuration) // Si le mode vue de dessus est terminé
-                {
-                    cooldownProgress = (timeSinceLastTopView - topViewDuration) / topViewCooldown;
-                }
-            }
-
-            // Clamp entre 0 et 1 pour éviter que la barre dépasse ses limites
-            cooldownProgress = MathF.Min(MathF.Max(cooldownProgress, 0.0f), 1.0f);
-            int fillWidth = (int)(cooldownProgress * barWidth);
-
-            // Dessin de la barre de cooldown
-            DrawRectangle(barX, barY, barWidth, barHeight, Color.DarkGray); // Fond
-            DrawRectangle(barX, barY, fillWidth, barHeight, Color.Red); // Remplissage en fonction du cooldown
-            DrawRectangleLines(barX, barY, barWidth, barHeight, Color.Black); // Contour de la barre 
         }
 
 

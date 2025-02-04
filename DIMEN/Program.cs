@@ -8,6 +8,10 @@ namespace DIMEN
 {
     public class Program
     {
+        public unsafe void UpdateCamera()
+        {
+
+        }
         public static unsafe void Main(string[] args)
         {
             // Initialisation
@@ -80,7 +84,6 @@ namespace DIMEN
                 playerPosition + new Vector3(0.5f, 0.5f, 0.5f)
             );
 
-
             // Variables pour la vue plan et le cooldown
             bool isTopView = false;
             float topViewDuration = 5.0f;
@@ -92,9 +95,13 @@ namespace DIMEN
             double lastTopViewTime = -topViewCooldown;
             double currentTime;
 
+  
+
             // Boucle principale
             while (!WindowShouldClose())
             {
+                float deltaTime = GetFrameTime();
+                currentTime = GetTime();
 
                 BoundingBox cubeBox = new BoundingBox(
                     cubePosition - colliderCubeDimension, // Min
@@ -106,16 +113,19 @@ namespace DIMEN
                     Vector3 tempPos = playerPosition + axes[i];
                     BoundingBox testBox = new BoundingBox(tempPos - new Vector3(0.5f, 0.5f, 0.5f), tempPos + new Vector3(0.5f, 0.5f, 0.5f));
 
-                    DrawText($"Collides? : {CheckCollisionBoxes(testBox, cubeBox)}", 10, 70, 20, Color.Black);
-
                     if (CheckCollisionBoxes(testBox, cubeBox))
                     {
                         velocity[i] = 0f; // Bloque le mouvement sur l'axe concerné
+                        if (isTopView)
+                        {
+                            
+                            playerPosition.Y = cubeDimensions.Y; // Place le joueur au sommet
+                            velocity.Y = 0;
+                        }
+                        
                     }
+                    
                 }
-                float deltaTime = GetFrameTime();
-                currentTime = GetTime();
-
                 // Gestion de la barre de progression (remplissage ou vidage)
                 if (isTopView)
                 {
@@ -175,7 +185,6 @@ namespace DIMEN
                     velocity.Y = gravity;
                 }
 
-
                 // Appliquer la gravité uniquement si le joueur n'est pas sur le sol
                 if (playerPosition.Y > groundLevel)
                 {
@@ -224,9 +233,6 @@ namespace DIMEN
                     camera.Projection = CameraProjection.Perspective;
                 }
 
-
-
-
                 // Dessin de la scène
                 BeginDrawing();
                 ClearBackground(Color.RayWhite);
@@ -257,7 +263,10 @@ namespace DIMEN
             UnloadTexture(roughnessMap);
             CloseWindow();
         }
+        
 
 
     }
+    
+
 }

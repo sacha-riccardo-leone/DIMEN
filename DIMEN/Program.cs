@@ -67,16 +67,19 @@ namespace DIMEN
             Vector3 playerPosition = new Vector3(0, 10, 0);
             Vector3 cubePosition = new Vector3(3, 4.25f, 3);
 
-            // Hitboxes pour la détection de collisions
-            BoundingBox playerBox = new BoundingBox(playerPosition - new Vector3(0.5f), playerPosition + new Vector3(0.5f));
-            BoundingBox cubeBox = new BoundingBox(cubePosition - new Vector3(1.5f, 4.5f, 1.5f), cubePosition + new Vector3(1.5f, 4.5f, 1.5f));
-
-            // Variable pour savoir si on est en vue de dessus
+            // Variables du mode plan
             bool isTopView = false;
+            float topViewDuration = 5.0f;  // Temps maximum en vue de dessus
+            float topViewTimer = 0.0f;     // Timer pour la durée de la vue de dessus
+            float topViewCooldown = 5.0f; // Temps de recharge avant de pouvoir recliquer Q
+            double lastTopViewTime = -topViewCooldown; // Stocke le temps du dernier passage en vue de dessus
 
             // Boucle principale
             while (!WindowShouldClose())
             {
+                float deltaTime = GetFrameTime();
+                double currentTime = GetTime();
+                DrawBar(currentTime, lastTopViewTime, topViewCooldown, isTopView, topViewDuration, ref topViewTimer);  // Passer topViewTimer par référence
                 // Appliquer la gravité
                 velocity.Y += gravity;
 
@@ -89,10 +92,6 @@ namespace DIMEN
 
                 // Calcul de la direction de la caméra
                 Vector3 cameraDirection = Vector3.Normalize(camera.Target - camera.Position);
-                float deltaTime = GetFrameTime();
-
-                // Changer de mode de vue (vue de dessus ou perspective)
-                if (IsKeyPressed(KeyboardKey.Q)) isTopView = !isTopView;
                 if (IsKeyPressed(KeyboardKey.E) && !isTopView)
                 {
                     targetRotationAngle += 90f;
@@ -133,34 +132,30 @@ namespace DIMEN
                     velocity.Y = 0; // Réinitialiser la vitesse verticale
                 }
                 Vector3 newPosition = playerPosition + velocity;
-                BoundingBox newPlayerBox = new BoundingBox(newPosition - new Vector3(0.5f), newPosition + new Vector3(0.5f));
 
 
-                // COLLISION + GLISSADE CONTRE LA PAROI
-                if (CheckCollisionBoxes(newPlayerBox, cubeBox))
+
+                // Changer de mode de vue (vue de dessus ou perspective)
+                if (IsKeyPressed(KeyboardKey.Q) && (currentTime - lastTopViewTime >= topViewCooldown))
                 {
-                    if (velocity.X != 0 && !CheckCollisionBoxes(new BoundingBox(playerPosition + new Vector3(velocity.X, 0, 0) - new Vector3(0.5f, 0.5f, 0.5f), playerPosition + new Vector3(velocity.X, 0, 0) + new Vector3(0.5f, 0.5f, 0.5f)), cubeBox))
-                    {
-                        playerPosition.X += velocity.X;
-                    }
-                    if (velocity.Z != 0 && !CheckCollisionBoxes(new BoundingBox(playerPosition + new Vector3(0, 0, velocity.Z) - new Vector3(0.5f, 0.5f, 0.5f), playerPosition + new Vector3(0, 0, velocity.Z) + new Vector3(0.5f, 0.5f, 0.5f)), cubeBox))
-                    {
-                        playerPosition.Z += velocity.Z;
-                    }
+                    isTopView = !isTopView;
+                    lastTopViewTime = currentTime; // Stocke le temps du dernier passage en vue de dessus
+                    topViewTimer = 0.0f; // Réinitialise le timer si on active la vue de dessus
                 }
-                else
-                {
-                    playerPosition = newPosition;
-                }
-
-                playerBox = new BoundingBox(playerPosition - new Vector3(0.5f, 0.5f, 0.5f), playerPosition + new Vector3(0.5f, 0.5f, 0.5f));
-                // Activer/Désactiver le mode de vue de dessus
                 if (isTopView)
                 {
+                    topViewTimer += deltaTime;
+                    if (topViewTimer >= topViewDuration)
+                    {
+                        isTopView = false; // Désactiver la vue de dessus après 5 secondes
+                    }
+                    camera.FovY = 20.0f;
                     camera.Position = new Vector3(playerPosition.X, 200.0f, playerPosition.Z);
                     camera.Target = new Vector3(playerPosition.X + moveDirection.X, 0.0f, playerPosition.Z + moveDirection.Z);
-                    camera.Up = new Vector3(moveDirection.X, 0.0f, moveDirection.Z);
+                    camera.Up = new Vector3(0.0f, 1.0f, 0.0f);
                     camera.Projection = CameraProjection.Orthographic;
+                    float timeRemaining = MathF.Max(0, topViewDuration - topViewTimer);
+
                 }
                 else
                 {
@@ -169,10 +164,12 @@ namespace DIMEN
                         1.0f,
                         -MathF.Cos(radians) * 10.0f
                     );
+                    camera.FovY = 45.0f;
                     camera.Position = playerPosition + cameraOffset;
                     camera.Target = playerPosition;
                     camera.Up = new Vector3(0.0f, 1.0f, 0.0f);
                     camera.Projection = CameraProjection.Perspective;
+                    //DrawText($"Temps avant prochaine vue de dessus: {MathF.Max(0, topViewCooldown - (float)(currentTime - lastTopViewTime)):F1}s", 10, 110, 20, Color.Red)
                 }
 
                 // Dessin de la scène
@@ -199,5 +196,45 @@ namespace DIMEN
             UnloadTexture(roughnessMap);
             CloseWindow();
         }
+        // Calculer la barre de cooldown et la mise à jour du temps
+        static void DrawBar(double currentTime, double lastTopViewTime, float topViewCooldown, bool isTopView, float topViewDuration, ref float topViewTimer)
+        {
+            // Dimensions et position de la barre de cooldown
+            int barWidth = 200;
+            int barHeight = 20;
+            int barX = 10;
+            int barY = 130;
+
+            // Calcul du pourcentage de remplissage
+            float cooldownProgress = 0.0f;
+
+            if (isTopView)
+            {
+                // Si on est en mode vue de dessus, la barre se vide
+                topViewTimer += (float)(currentTime - lastTopViewTime); // Incrémentation du timer uniquement pendant la vue de dessus
+                cooldownProgress = 1.0f - (topViewTimer / topViewDuration); // La barre se vide pendant la durée de la vue de dessus
+            }
+            else
+            {
+                // Si on n'est pas en mode vue de dessus, la barre se remplit
+                // La barre doit commencer pleine lorsque le cooldown commence
+                float timeSinceLastTopView = (float)(currentTime - lastTopViewTime);
+                if (timeSinceLastTopView >= topViewDuration) // Si le mode vue de dessus est terminé
+                {
+                    cooldownProgress = (timeSinceLastTopView - topViewDuration) / topViewCooldown;
+                }
+            }
+
+            // Clamp entre 0 et 1 pour éviter que la barre dépasse ses limites
+            cooldownProgress = MathF.Min(MathF.Max(cooldownProgress, 0.0f), 1.0f);
+            int fillWidth = (int)(cooldownProgress * barWidth);
+
+            // Dessin de la barre de cooldown
+            DrawRectangle(barX, barY, barWidth, barHeight, Color.DarkGray); // Fond
+            DrawRectangle(barX, barY, fillWidth, barHeight, Color.Red); // Remplissage en fonction du cooldown
+            DrawRectangleLines(barX, barY, barWidth, barHeight, Color.Black); // Contour de la barre 
+        }
+
+
     }
 }

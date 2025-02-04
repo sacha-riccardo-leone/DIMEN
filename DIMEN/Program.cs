@@ -59,15 +59,22 @@ namespace DIMEN
 
             // Variables pour la gravité et la physique
             Vector3 velocity = Vector3.Zero;
-            float gravity = -9.81f;
+            float gravity = -0.2f;
             float gridLevel = 0.5f;
             // Variables de gestion de la vitesse
-            float maxSpeed = 0.005f; // Vitesse maximale du joueur
+            float maxSpeed = 0.2f; // Vitesse maximale du joueur
+
 
             // Positions des objets
             Vector3 playerPosition = new Vector3(0, 10, 0);
             Vector3 cubePosition = new Vector3(3, 4.25f, 3);
+            BoundingBox playerBox = new BoundingBox(
+                playerPosition - new Vector3(0.5f, 0.5f, 0.5f),
+                playerPosition + new Vector3(0.5f, 0.5f, 0.5f)
+            );
 
+
+            // Variables pour la vue plan et le cooldown
             bool isTopView = false;
             float topViewDuration = 5.0f;
             float topViewTimer = 0.0f;
@@ -107,33 +114,22 @@ namespace DIMEN
                 }
 
                 // Appliquer la gravité
-                velocity.Y += gravity;
-
-                // Vérification du contact avec le sol
-                if (playerPosition.Y <= gridLevel)
-                {
-                    playerPosition.Y = gridLevel;
-                    velocity.Y = 0;
-                }
-
+                velocity.Y = gravity;
+                // Interpolation fluide de la rotation
+                currentRotationAngle = Raymath.Lerp(currentRotationAngle, targetRotationAngle, rotationSpeed * deltaTime);
                 // Calcul de la direction de la caméra
                 Vector3 cameraDirection = Vector3.Normalize(camera.Target - camera.Position);
                 if (IsKeyPressed(KeyboardKey.E) && !isTopView)
                 {
                     targetRotationAngle += 90f;
                 }
-
-                // Interpolation fluide de la rotation
-                currentRotationAngle = Raymath.Lerp(currentRotationAngle, targetRotationAngle, rotationSpeed * deltaTime);
-
                 // Calcul de l'angle et direction du mouvement
                 float radians = MathF.PI * currentRotationAngle / 180f;
                 Vector3 moveDirection = new Vector3(MathF.Sin(radians), 0, MathF.Cos(radians));
                 Vector3 strafeDirection = new Vector3(MathF.Cos(radians), 0, -MathF.Sin(radians));
 
                 // Mise à jour de la position du joueur
-                playerPosition += Raymath.Vector3Normalize(velocity) / 6;
-
+                playerPosition += Raymath.Vector3Normalize(velocity) / 5;
                 // Déplacements du joueur (avant/arrière et latéraux)
                 if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) velocity += moveDirection * 0.1f;
                 if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) velocity -= moveDirection * 0.1f;
@@ -143,22 +139,44 @@ namespace DIMEN
                 {
                     velocity = Vector3.Zero; // Arrêter le joueur
                 }
-                // Limiter la vitesse
-                if (velocity.Length() > maxSpeed)  // Si la vitesse dépasse la vitesse maximale
+                if (velocity.Length() > maxSpeed)
                 {
-                    velocity = Vector3.Normalize(velocity) * maxSpeed; // Normaliser et appliquer la vitesse maximale
+                    velocity = Vector3.Normalize(velocity) * maxSpeed;
                 }
-                // Appliquer la vitesse au joueur
-                playerPosition += velocity;
-
-                // Détection de collision avec la grille (niveau Y de la grille)
-                if (playerPosition.Y <= gridLevel)
+                if (velocity.Y > gravity)
                 {
-                    playerPosition.Y = gridLevel; // Réinitialiser la position au niveau du sol
-                    velocity.Y = 0; // Réinitialiser la vitesse verticale
+                    velocity.Y = gravity;
                 }
-                Vector3 newPosition = playerPosition + velocity;
+                BoundingBox cubeBox = new BoundingBox(
+                    cubePosition - new Vector3(1.5f, 4.5f, 1.5f), // Min
+                    cubePosition + new Vector3(1.5f, 4.5f, 1.5f)  // Max
+                );
+                // Vérification de la collision sur X uniquement
+                Vector3 tempPosX = playerPosition + new Vector3(velocity.X, 0, 0);
+                BoundingBox testBoxX = new BoundingBox(tempPosX - new Vector3(0.5f, 0.5f, 0.5f), tempPosX + new Vector3(0.5f, 0.5f, 0.5f));
+                if (CheckCollisionBoxes(testBoxX, cubeBox))
+                {
+                    velocity.X = 0f; // Bloquer le mouvement en X
+                }
+                // Vérification de la collision sur Z uniquement
+                Vector3 tempPosZ = playerPosition + new Vector3(0, 0, velocity.Z);
+                BoundingBox testBoxZ = new BoundingBox(tempPosZ - new Vector3(0.5f, 0.5f, 0.5f), tempPosZ + new Vector3(0.5f, 0.5f, 0.5f));
+                if (CheckCollisionBoxes(testBoxZ, cubeBox))
+                {
+                    velocity.Z = 0f; // Bloquer le mouvement en Z
+                }
 
+
+                // Appliquer la gravité uniquement si le joueur n'est pas sur le sol
+                if (playerPosition.Y > gridLevel)
+                {
+                    velocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
+                }
+                else
+                {
+                    velocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
+                    playerPosition.Y = gridLevel;  // Maintien le joueur sur le sol
+                }
 
 
                 // Changer de mode de vue (vue de dessus ou perspective)
@@ -216,7 +234,9 @@ namespace DIMEN
                 // Debug
                 //DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
                 //DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
-                //DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
+                DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
+                DrawText($"Collides? : {CheckCollisionBoxes(testBoxX, cubeBox) || CheckCollisionBoxes(testBoxZ, cubeBox)}", 10, 70, 20, Color.Black);
+
                 EndDrawing();
             }
             // Déchargement des ressources

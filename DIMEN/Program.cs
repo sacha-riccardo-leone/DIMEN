@@ -18,13 +18,14 @@ namespace DIMEN
             Shaders.Init();
             PBRMaterial pBRMaterial = new PBRMaterial("assets/textures/metal/2K/");
             Model cubeModel = LoadModel("assets/objects/Cube.obj"); // Charger le modèle
+            Model obstacleModel = LoadModel("assets/objects/Obstacle.obj"); // Charger le modèle
             for (int i = 0; i < cubeModel.MeshCount; i++)
             {
                 GenMeshTangents(ref cubeModel.Meshes[i]);
+                GenMeshTangents(ref obstacleModel.Meshes[i]);
             }
-            //GenMeshTangents(ref cubeMesh);
             cubeModel.Materials[0] = pBRMaterial.Material;
-
+            obstacleModel.Materials[0] = pBRMaterial.Material;
 
 
             // Configuration de la caméra
@@ -38,8 +39,9 @@ namespace DIMEN
             };
 
             // Dimensions
-            Vector3 cubeDimensions = new Vector3(10f, 10f, 10f);
-            Vector3 colliderCubeDimension = cubeDimensions / 2;
+            Vector3 playerDimensions = new Vector3(1);
+            Vector3 obstacelDimensions = new Vector3(8);
+            Vector3 colliderObstacleDimension = obstacelDimensions / 2;
             Vector2 planeSize = new Vector2(300, 300);
 
 
@@ -49,26 +51,25 @@ namespace DIMEN
             float rotationSpeed = 5f;
 
             // Variables pour la gravité et la physique
-            Vector3 velocity = Vector3.Zero;
+            Vector3 playerVelocity = Vector3.Zero;
             float gravity = -0.2f;
             bool isFalling = false;
             const float GRIDLEVEL = 0.5f;
             float groundLevel = GRIDLEVEL;
             float friction = 0.9f;
             float deceleration = 0.65f; // Facteur de ralentissement
-            // Hauteur au sommet du cube
-            float topViewHeight = cubeDimensions.Y;
-            // Variables de gestion de la vitesse
-            float maxSpeed = 0.2f; // Vitesse maximale du joueur
+            float speed = 0.01f; // Vitesse maximale du joueur
 
             // Positions des objets
-            Vector3 playerPosition = new Vector3(-3, 15, 0);
-            Vector3 cubePosition = new Vector3(6, 4.25f, 6);
-            BoundingBox playerBox = new BoundingBox(
-                playerPosition - new Vector3(0.5f, 0.5f, 0.5f),
-                playerPosition + new Vector3(0.5f, 0.5f, 0.5f)
-            );
+            Vector3 playerPosition = new Vector3(5,1,5);
+            Vector3 obstaclePosition = new Vector3(0,0,0);
             Vector3 planePosition = new Vector3(0, 0, 0);
+
+
+            BoundingBox obstacleBox = GetMeshBoundingBox(obstacleModel.Meshes[0]);
+
+            BoundingBox playerBox = GetMeshBoundingBox(cubeModel.Meshes[0]);
+            
 
             // Variables pour la vue plan et le cooldown
             bool isTopView = false;
@@ -90,29 +91,6 @@ namespace DIMEN
                
                 float deltaTime = GetFrameTime();
                 currentTime = GetTime();
-
-                BoundingBox cubeBox = new BoundingBox(
-                    cubePosition - colliderCubeDimension, // Min
-                    cubePosition + colliderCubeDimension  // Max
-                );
-                Vector3[] axes = { new Vector3(velocity.X, 0, 0), new Vector3(0, velocity.Y, 0), new Vector3(0, 0, velocity.Z) };
-                for (int i = 0; i < 3; i++)
-                {
-                    Vector3 tempPos = playerPosition + axes[i];
-                    BoundingBox testBox = new BoundingBox(tempPos - new Vector3(0.5f, 0.5f, 0.5f), tempPos + new Vector3(0.5f, 0.5f, 0.5f));
-                    if (CheckCollisionBoxes(testBox, cubeBox))
-                    {
-                        velocity[i] = 0f; // Bloque le mouvement sur l'axe concerné
-                    }
-                    if (isTopView)
-                    {
-                        if (CheckCollisionBoxes(testBox, cubeBox))
-                        {
-                            playerPosition.Y = cubeDimensions.Y; // Place le joueur au sommet
-                        }
-                    }
-                    
-                }
                 
                 // Gestion de la barre de progression (remplissage ou vidage)
                 if (isTopView)
@@ -150,40 +128,69 @@ namespace DIMEN
                 Vector3 strafeDirection = new Vector3(MathF.Cos(radians), 0, -MathF.Sin(radians));
 
                 // Mise à jour de la position du joueur
-                playerPosition += Raymath.Vector3Normalize(velocity) / 5;
+                playerPosition += Raymath.Vector3Normalize(playerVelocity) / 10;
                 // Déplacements du joueur (avant/arrière et latéraux)
-                if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) velocity += moveDirection * 0.1f * friction;
-                if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) velocity -= moveDirection * 0.1f * friction;
-                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) velocity -= strafeDirection * 0.1f * friction;
-                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) velocity += strafeDirection * 0.1f * friction;
+                if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) playerVelocity += moveDirection * 0.1f * friction;
+                if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) playerVelocity -= moveDirection * 0.1f * friction;
+                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) playerVelocity -= strafeDirection * 0.1f * friction;
+                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) playerVelocity += strafeDirection * 0.1f * friction;
 
                 // Appliquer un ralentissement progressif si aucune touche n'est pressée
                 if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D))
                 {
-                    velocity *= deceleration; // Ralentissement progressif
-                    if (velocity.Length() < 0.01f) velocity = Vector3.Zero; // Éviter une vitesse résiduelle
+                    playerVelocity *= deceleration; // Ralentissement progressif
+                    if (playerVelocity.Length() < 0.01f) playerVelocity = Vector3.Zero; // Éviter une vitesse résiduelle
+                }
+
+                if (CheckCollisionBoxes(playerBox, obstacleBox))
+                {
+                    Vector3 tempPos = playerPosition + new Vector3(playerVelocity.X, 0, 0);
+                    BoundingBox tempBox = new BoundingBox(tempPos - new Vector3(0.3f), tempPos + new Vector3(0.3f));
+                    if (!CheckCollisionBoxes(tempBox, obstacleBox))
+                    {
+                        playerPosition.X += playerVelocity.X;
+                    }
+                    // Tester le glissement sur Z
+                    tempPos = playerPosition + new Vector3(0, 0, playerVelocity.Z);
+                    tempBox = new BoundingBox(tempPos - new Vector3(0.3f), tempPos + new Vector3(0.3f));
+                    if (!CheckCollisionBoxes(tempBox, obstacleBox))
+                    {
+                        playerPosition.Z += playerVelocity.Z;
+                    }
+                }
+                else
+                {
+                    playerPosition += playerVelocity;
+                }
+
+                if (isTopView)
+                {
+                    if (CheckCollisionBoxes(playerBox, obstacleBox))
+                    {
+                        playerPosition.Y = obstacelDimensions.Y; // Place le joueur au sommet
+                    }
                 }
 
                 // Limiter la vitesse maximale
-                if (velocity.Length() > maxSpeed)
+                if (playerVelocity.Length() > speed)
                 {
-                    velocity = Vector3.Normalize(velocity) * maxSpeed;
+                    playerVelocity = Vector3.Normalize(playerVelocity) * speed;
                 }
 
-                if (velocity.Y > gravity)
+                if (playerVelocity.Y > gravity)
                 {
-                    velocity.Y = gravity;
+                    playerVelocity.Y = gravity;
                 }
 
                 // Appliquer la gravité uniquement si le joueur n'est pas sur le sol
-                if (playerPosition.Y > groundLevel)
+                if (playerPosition.Y > groundLevel && !CheckCollisionBoxes(obstacleBox, playerBox))
                 {
-                    velocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
+                    playerVelocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
                     isFalling = true;
                 }
                 else
                 {
-                    velocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
+                    playerVelocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
                     playerPosition.Y = groundLevel;  // Maintien le joueur sur le sol
                     isFalling = false;
                 }
@@ -213,7 +220,7 @@ namespace DIMEN
                 }
                 else
                 {
-                    //playerPosition.Y = UpdateGroundLevel(groundLevel, playerPosition, velocity);
+                    //playerPosition.Y = UpdateGroundLevel(groundLevel, playerPosition, playerVelocity);
                     Vector3 cameraOffset = new Vector3(
                         -MathF.Sin(radians) * 10.0f,
                         1.0f,
@@ -231,14 +238,15 @@ namespace DIMEN
                 ClearBackground(Color.RayWhite);
                 BeginMode3D(camera);
                 DrawPlane(planePosition, planeSize, Color.Gray);
-                DrawCube(cubePosition, cubeDimensions.X, cubeDimensions.Y, cubeDimensions.Z, Color.DarkGray);
-                DrawCubeWires(cubePosition, cubeDimensions.X, cubeDimensions.Y, cubeDimensions.Z, Color.Red);
-
 
                 DrawModel(cubeModel, playerPosition, 1, Color.White);
-                DrawCubeWires(playerPosition, 1.0f, 1.0f, 1.0f, Color.Red);
-                DrawSphere(Shaders.Light1.Position, 1.0f, Color.Blue);
-                DrawSphere(Shaders.Light2.Position, 1.0f, Color.Red);
+                DrawModel(obstacleModel, obstaclePosition, 1, Color.White);
+
+                DrawCubeWires(playerPosition, playerDimensions.X, playerDimensions.Y, playerDimensions.Z, Color.Red);
+                DrawCubeWires(obstaclePosition, obstacelDimensions.X, obstacelDimensions.Y, obstacelDimensions.Z, Color.Red);
+
+                DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
+                DrawSphere(Shaders.Light2.Position, 1.0f, Color.Orange);
                 EndMode3D();
                 // Dessin de la barre de progression
                 DrawRectangle(10, 10, 200, 25, Color.LightGray);
@@ -247,8 +255,11 @@ namespace DIMEN
                 // Debug
                 //DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
                 DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
-                DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
+                DrawText($"Player Speed: {playerVelocity}", 10, 50, 20, Color.Black);
                 DrawText($"Is player falling: {isFalling}", 10, 70, 20, Color.Black); 
+                DrawText($"Is player touching obstacle: {CheckCollisionBoxes(obstacleBox, playerBox)}", 10, 90, 20, Color.Black); 
+                
+
                 EndDrawing();
             }
             // Déchargement des ressources

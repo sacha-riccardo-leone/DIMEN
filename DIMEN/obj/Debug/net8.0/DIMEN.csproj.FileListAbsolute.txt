@@ -85,3 +85,5 @@ C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\I
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Image_Normal.png
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\Cube.mtl
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\Cube.obj
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\Obstacle.mtl
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\Obstacle.obj

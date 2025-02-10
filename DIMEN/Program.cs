@@ -15,32 +15,17 @@ namespace DIMEN
             SetTargetFPS(60);
             DisableCursor(); // Désactiver le curseur
 
-            // Charger les ressources (modèles, textures, shader)
-            Mesh cubeMesh = GenMeshCube(1f, 1f, 1f);
-            Model cubeModel = LoadModelFromMesh(cubeMesh); // Charger le modèle
-            Material cubeMaterial = cubeModel.Materials[0]; // Récupérer le matériau par défaut
+            Shaders.Init();
+            PBRMaterial pBRMaterial = new PBRMaterial("assets/textures/metal/2K/");
+            Model cubeModel = LoadModel("assets/objects/Cube.obj"); // Charger le modèle
+            for (int i = 0; i < cubeModel.MeshCount; i++)
+            {
+                GenMeshTangents(ref cubeModel.Meshes[i]);
+            }
+            //GenMeshTangents(ref cubeMesh);
+            cubeModel.Materials[0] = pBRMaterial.Material;
 
-            // Charger les textures
-            Texture2D baseColor = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_BaseColor.jpg");
-            Texture2D normalMap = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_Normal.png");
-            Texture2D metallicMap = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_Metallic.jpg");
-            Texture2D roughnessMap = LoadTexture("assets/textures/metal/2K/Poliigon_MetalSteelBrushed_7174_Roughness.jpg");
 
-            // Appliquer les textures au matériau
-            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Albedo, baseColor);
-            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Normal, normalMap);
-            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Metalness, metallicMap);
-            SetMaterialTexture(ref cubeMaterial, MaterialMapIndex.Roughness, roughnessMap);
-            SetMaterialTexture(ref cubeModel, 0, MaterialMapIndex.Albedo, ref baseColor);
-
-            // Charger et configurer le shader
-            Shader lightingShader = LoadShader("assets/shaders/lighting.vs", "assets/shaders/lighting.fs");
-            SetMaterialShader(ref cubeModel, 0, ref lightingShader);
-
-            // Configurer la lumière
-            int lightLoc = GetShaderLocation(lightingShader, "lightPosition");
-            Vector3 lightPosition = new Vector3(5, 5, 5);
-            SetShaderValue(lightingShader, lightLoc, lightPosition, ShaderUniformDataType.Vec3);
 
             // Configuration de la caméra
             Camera3D camera = new Camera3D
@@ -55,6 +40,7 @@ namespace DIMEN
             // Dimensions
             Vector3 cubeDimensions = new Vector3(10f, 10f, 10f);
             Vector3 colliderCubeDimension = cubeDimensions / 2;
+            Vector2 planeSize = new Vector2(300, 300);
 
 
             // Variables pour la gestion du mouvement et de la rotation
@@ -77,11 +63,12 @@ namespace DIMEN
 
             // Positions des objets
             Vector3 playerPosition = new Vector3(-3, 15, 0);
-            Vector3 cubePosition = new Vector3(3, 4.25f, 3);
+            Vector3 cubePosition = new Vector3(6, 4.25f, 6);
             BoundingBox playerBox = new BoundingBox(
                 playerPosition - new Vector3(0.5f, 0.5f, 0.5f),
                 playerPosition + new Vector3(0.5f, 0.5f, 0.5f)
             );
+            Vector3 planePosition = new Vector3(0, 0, 0);
 
             // Variables pour la vue plan et le cooldown
             bool isTopView = false;
@@ -94,11 +81,12 @@ namespace DIMEN
             double lastTopViewTime = -topViewCooldown;
             double currentTime;
 
-  
+        
 
             // Boucle principale
             while (!WindowShouldClose())
             {
+                Shaders.UpdatePBRLighting(camera.Position);
                
                 float deltaTime = GetFrameTime();
                 currentTime = GetTime();
@@ -242,13 +230,15 @@ namespace DIMEN
                 BeginDrawing();
                 ClearBackground(Color.RayWhite);
                 BeginMode3D(camera);
-                DrawGrid(30, 1.0f);
+                DrawPlane(planePosition, planeSize, Color.Gray);
                 DrawCube(cubePosition, cubeDimensions.X, cubeDimensions.Y, cubeDimensions.Z, Color.DarkGray);
                 DrawCubeWires(cubePosition, cubeDimensions.X, cubeDimensions.Y, cubeDimensions.Z, Color.Red);
 
 
                 DrawModel(cubeModel, playerPosition, 1, Color.White);
                 DrawCubeWires(playerPosition, 1.0f, 1.0f, 1.0f, Color.Red);
+                DrawSphere(Shaders.Light1.Position, 1.0f, Color.Blue);
+                DrawSphere(Shaders.Light2.Position, 1.0f, Color.Red);
                 EndMode3D();
                 // Dessin de la barre de progression
                 DrawRectangle(10, 10, 200, 25, Color.LightGray);
@@ -256,17 +246,12 @@ namespace DIMEN
                 DrawRectangleLines(10, 10, 200, 25, Color.Black);
                 // Debug
                 //DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
-                //DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
+                DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
                 DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
                 DrawText($"Is player falling: {isFalling}", 10, 70, 20, Color.Black); 
                 EndDrawing();
             }
             // Déchargement des ressources
-            UnloadMaterial(cubeMaterial);
-            UnloadTexture(baseColor);
-            UnloadTexture(normalMap);
-            UnloadTexture(metallicMap);
-            UnloadTexture(roughnessMap);
             CloseWindow();
         }
 

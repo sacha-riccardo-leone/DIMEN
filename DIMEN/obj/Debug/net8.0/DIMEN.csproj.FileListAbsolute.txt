@@ -20,10 +20,7 @@ C:\Users\leones1\Desktop\DIMEN\DIMEN\obj\Debug\net8.0\DIMEN.sourcelink.json
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\shaders\lighting.fs
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\shaders\lighting.vs
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174.mtlx
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174_BaseColor.jpg
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174_Metallic.jpg
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174_Normal.png
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\Poliigon_MetalSteelBrushed_7174_Preview1.png
 C:\Users\Inconnu\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\DIMEN.exe
@@ -82,3 +79,9 @@ C:\Users\leones1\Desktop\Actuel\DIMEN\DIMEN\obj\Debug\net8.0\refint\DIMEN.dll
 C:\Users\leones1\Desktop\Actuel\DIMEN\DIMEN\obj\Debug\net8.0\DIMEN.pdb
 C:\Users\leones1\Desktop\Actuel\DIMEN\DIMEN\obj\Debug\net8.0\DIMEN.genruntimeconfig.cache
 C:\Users\leones1\Desktop\Actuel\DIMEN\DIMEN\obj\Debug\net8.0\ref\DIMEN.dll
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Image_Diffuse.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Image_Emission.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Image_Metalness.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Image_Normal.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\Cube.mtl
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\Cube.obj

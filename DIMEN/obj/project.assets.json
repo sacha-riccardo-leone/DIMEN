@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\leones1\\Desktop\\Actuel\\DIMEN\\DIMEN\\DIMEN.csproj",
+      "projectUniqueName": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\DIMEN.csproj",
       "projectName": "DIMEN",
-      "projectPath": "C:\\Users\\leones1\\Desktop\\Actuel\\DIMEN\\DIMEN\\DIMEN.csproj",
+      "projectPath": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\DIMEN.csproj",
       "packagesPath": "C:\\Users\\leones1\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\leones1\\Desktop\\Actuel\\DIMEN\\DIMEN\\obj\\",
+      "outputPath": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

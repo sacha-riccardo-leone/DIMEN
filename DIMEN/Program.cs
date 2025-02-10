@@ -8,10 +8,6 @@ namespace DIMEN
 {
     public class Program
     {
-        public unsafe void UpdateCamera()
-        {
-
-        }
         public static unsafe void Main(string[] args)
         {
             // Initialisation
@@ -69,8 +65,11 @@ namespace DIMEN
             // Variables pour la gravité et la physique
             Vector3 velocity = Vector3.Zero;
             float gravity = -0.2f;
+            bool isFalling = false;
             const float GRIDLEVEL = 0.5f;
             float groundLevel = GRIDLEVEL;
+            float friction = 0.9f;
+            float deceleration = 0.65f; // Facteur de ralentissement
             // Hauteur au sommet du cube
             float topViewHeight = cubeDimensions.Y;
             // Variables de gestion de la vitesse
@@ -100,6 +99,7 @@ namespace DIMEN
             // Boucle principale
             while (!WindowShouldClose())
             {
+               
                 float deltaTime = GetFrameTime();
                 currentTime = GetTime();
 
@@ -112,23 +112,24 @@ namespace DIMEN
                 {
                     Vector3 tempPos = playerPosition + axes[i];
                     BoundingBox testBox = new BoundingBox(tempPos - new Vector3(0.5f, 0.5f, 0.5f), tempPos + new Vector3(0.5f, 0.5f, 0.5f));
-
                     if (CheckCollisionBoxes(testBox, cubeBox))
                     {
                         velocity[i] = 0f; // Bloque le mouvement sur l'axe concerné
-                        if (isTopView)
+                    }
+                    if (isTopView)
+                    {
+                        if (CheckCollisionBoxes(testBox, cubeBox))
                         {
-                            
                             playerPosition.Y = cubeDimensions.Y; // Place le joueur au sommet
-                            velocity.Y = 0;
                         }
-                        
                     }
                     
                 }
+                
                 // Gestion de la barre de progression (remplissage ou vidage)
                 if (isTopView)
                 {
+                    
                     progress -= deltaTime / topViewDuration;
                     if (progress <= 0.0f)
                     {
@@ -147,8 +148,6 @@ namespace DIMEN
                         filling = false;
                     }
                 }
-
-                
                 // Interpolation fluide de la rotation
                 currentRotationAngle = Raymath.Lerp(currentRotationAngle, targetRotationAngle, rotationSpeed * deltaTime);
                 // Calcul de la direction de la caméra
@@ -165,16 +164,19 @@ namespace DIMEN
                 // Mise à jour de la position du joueur
                 playerPosition += Raymath.Vector3Normalize(velocity) / 5;
                 // Déplacements du joueur (avant/arrière et latéraux)
-                if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) velocity += moveDirection * 0.1f;
-                if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) velocity -= moveDirection * 0.1f;
-                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) velocity -= strafeDirection * 0.1f;
-                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) velocity += strafeDirection * 0.1f;
+                if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) velocity += moveDirection * 0.1f * friction;
+                if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) velocity -= moveDirection * 0.1f * friction;
+                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) velocity -= strafeDirection * 0.1f * friction;
+                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) velocity += strafeDirection * 0.1f * friction;
 
-                if (!IsKeyDown(KeyboardKey.W) && !IsKeyDown(KeyboardKey.S) && !IsKeyDown(KeyboardKey.A) && !IsKeyDown(KeyboardKey.D))
+                // Appliquer un ralentissement progressif si aucune touche n'est pressée
+                if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D))
                 {
-                    velocity = Vector3.Zero; // Arrêter le joueur
+                    velocity *= deceleration; // Ralentissement progressif
+                    if (velocity.Length() < 0.01f) velocity = Vector3.Zero; // Éviter une vitesse résiduelle
                 }
 
+                // Limiter la vitesse maximale
                 if (velocity.Length() > maxSpeed)
                 {
                     velocity = Vector3.Normalize(velocity) * maxSpeed;
@@ -189,11 +191,13 @@ namespace DIMEN
                 if (playerPosition.Y > groundLevel)
                 {
                     velocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
+                    isFalling = true;
                 }
                 else
                 {
                     velocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
                     playerPosition.Y = groundLevel;  // Maintien le joueur sur le sol
+                    isFalling = false;
                 }
 
                 // Changer de mode de vue (vue de dessus ou perspective)
@@ -205,7 +209,7 @@ namespace DIMEN
                 }
 
                 if (isTopView)
-                {
+                {  
                     topViewTimer += deltaTime;
                     if (topViewTimer >= topViewDuration)
                     {
@@ -221,6 +225,7 @@ namespace DIMEN
                 }
                 else
                 {
+                    //playerPosition.Y = UpdateGroundLevel(groundLevel, playerPosition, velocity);
                     Vector3 cameraOffset = new Vector3(
                         -MathF.Sin(radians) * 10.0f,
                         1.0f,
@@ -253,6 +258,7 @@ namespace DIMEN
                 //DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
                 //DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
                 DrawText($"Player Speed: {velocity}", 10, 50, 20, Color.Black);
+                DrawText($"Is player falling: {isFalling}", 10, 70, 20, Color.Black); 
                 EndDrawing();
             }
             // Déchargement des ressources
@@ -263,10 +269,9 @@ namespace DIMEN
             UnloadTexture(roughnessMap);
             CloseWindow();
         }
-        
-
 
     }
+    
     
 
 }

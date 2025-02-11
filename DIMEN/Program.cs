@@ -18,14 +18,27 @@ namespace DIMEN
             Shaders.Init();
             PBRMaterial pBRMaterial = new PBRMaterial("assets/textures/metal/2K/");
             Model cubeModel = LoadModel("assets/objects/Cube.obj"); // Charger le modèle
-            Model obstacleModel = LoadModel("assets/objects/Obstacle.obj"); // Charger le modèle
+            Model obstacleModel = LoadModel("assets/objects/Obstacle.obj");
             for (int i = 0; i < cubeModel.MeshCount; i++)
             {
                 GenMeshTangents(ref cubeModel.Meshes[i]);
+   
+            }
+            for (int i = 0; i < obstacleModel.MeshCount; i++)
+            {
                 GenMeshTangents(ref obstacleModel.Meshes[i]);
             }
-            cubeModel.Materials[0] = pBRMaterial.Material;
-            obstacleModel.Materials[0] = pBRMaterial.Material;
+
+            if (cubeModel.MaterialCount > 0)
+            {
+                cubeModel.Materials[0] = pBRMaterial.Material;
+            }
+
+            // Appliquer un matériau PBR (Assurez-vous que pBRMaterial est valide)
+            if (obstacleModel.MaterialCount > 0)
+            {
+                obstacleModel.Materials[0] = pBRMaterial.Material;
+            }
 
 
             // Configuration de la caméra
@@ -40,8 +53,8 @@ namespace DIMEN
 
             // Dimensions
             Vector3 playerDimensions = new Vector3(1);
-            Vector3 obstacelDimensions = new Vector3(8);
-            Vector3 colliderObstacleDimension = obstacelDimensions / 2;
+            Vector3 obstacleDimensions = new Vector3(8);
+            Vector3 colliderObstacleDimension = obstacleDimensions / 2;
             Vector2 planeSize = new Vector2(300, 300);
 
 
@@ -61,16 +74,21 @@ namespace DIMEN
             float speed = 0.01f; // Vitesse maximale du joueur
 
             // Positions des objets
-            Vector3 playerPosition = new Vector3(5,1,5);
-            Vector3 obstaclePosition = new Vector3(0,0,0);
+            Vector3 playerPosition = new Vector3(10,1,10);
+            Vector3 obstaclePosition = new Vector3(0, 0, 0); // Modifier en fonction de ta scène  
             Vector3 planePosition = new Vector3(0, 0, 0);
 
 
-            BoundingBox obstacleBox = GetMeshBoundingBox(obstacleModel.Meshes[0]);
+            BoundingBox obstacleBox = new BoundingBox(
+                obstaclePosition - (obstacleDimensions / 2),
+                obstaclePosition + (obstacleDimensions / 2)
+            );
 
-            BoundingBox playerBox = GetMeshBoundingBox(cubeModel.Meshes[0]);
+            BoundingBox playerBox = new BoundingBox(
+                playerPosition - (playerDimensions / 2),
+                playerPosition + (playerDimensions / 2)
+            );
             
-
             // Variables pour la vue plan et le cooldown
             bool isTopView = false;
             float topViewDuration = 5.0f;
@@ -135,6 +153,11 @@ namespace DIMEN
                 if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) playerVelocity -= strafeDirection * 0.1f * friction;
                 if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) playerVelocity += strafeDirection * 0.1f * friction;
 
+                playerBox = new BoundingBox(
+                    new Vector3(playerPosition.X - 0.5f, playerPosition.Y - 0.5f, playerPosition.Z - 0.5f),
+                    new Vector3(playerPosition.X + 0.5f, playerPosition.Y + 0.5f, playerPosition.Z + 0.5f)
+                );
+
                 // Appliquer un ralentissement progressif si aucune touche n'est pressée
                 if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D))
                 {
@@ -144,30 +167,52 @@ namespace DIMEN
 
                 if (CheckCollisionBoxes(playerBox, obstacleBox))
                 {
-                    Vector3 tempPos = playerPosition + new Vector3(playerVelocity.X, 0, 0);
-                    BoundingBox tempBox = new BoundingBox(tempPos - new Vector3(0.3f), tempPos + new Vector3(0.3f));
-                    if (!CheckCollisionBoxes(tempBox, obstacleBox))
+                    // Déterminer les distances sur chaque axe
+                    float deltaX = playerPosition.X - obstaclePosition.X;
+                    float deltaZ = playerPosition.Z - obstaclePosition.Z;
+
+                    // Calculer la profondeur de la collision sur chaque côté
+                    float overlapX = playerDimensions.X / 2 + obstacleDimensions.X / 2 - Math.Abs(deltaX);
+                    float overlapZ = playerDimensions.Y / 2 + obstacleDimensions.Y / 2 - Math.Abs(deltaZ);
+
+                    // Déterminer la direction de la collision
+                    if (overlapX < overlapZ)
                     {
-                        playerPosition.X += playerVelocity.X;
+                        // Collision sur les côtés (axe X)
+                        if (deltaX > 0)
+                        {
+                            // Glissement vers la droite
+                            playerPosition.X += overlapX;
+                        }
+                        else
+                        {
+                            // Glissement vers la gauche
+                            playerPosition.X -= overlapX;
+                        }
                     }
-                    // Tester le glissement sur Z
-                    tempPos = playerPosition + new Vector3(0, 0, playerVelocity.Z);
-                    tempBox = new BoundingBox(tempPos - new Vector3(0.3f), tempPos + new Vector3(0.3f));
-                    if (!CheckCollisionBoxes(tempBox, obstacleBox))
+                    else
                     {
-                        playerPosition.Z += playerVelocity.Z;
+                        // Collision sur le devant ou l'arrière (axe Z)
+                        if (deltaZ > 0)
+                        {
+                            // Glissement vers l'avant
+                            playerPosition.Z += overlapZ;
+                        }
+                        else
+                        {
+                            // Glissement vers l'arrière
+                            playerPosition.Z -= overlapZ;
+                        }
                     }
                 }
-                else
-                {
-                    playerPosition += playerVelocity;
-                }
+
+
 
                 if (isTopView)
                 {
                     if (CheckCollisionBoxes(playerBox, obstacleBox))
                     {
-                        playerPosition.Y = obstacelDimensions.Y; // Place le joueur au sommet
+                        playerPosition.Y = obstacleDimensions.Y; // Place le joueur au sommet
                     }
                 }
 
@@ -242,11 +287,11 @@ namespace DIMEN
                 DrawModel(cubeModel, playerPosition, 1, Color.White);
                 DrawModel(obstacleModel, obstaclePosition, 1, Color.White);
 
-                DrawCubeWires(playerPosition, playerDimensions.X, playerDimensions.Y, playerDimensions.Z, Color.Red);
-                DrawCubeWires(obstaclePosition, obstacelDimensions.X, obstacelDimensions.Y, obstacelDimensions.Z, Color.Red);
-
                 DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
                 DrawSphere(Shaders.Light2.Position, 1.0f, Color.Orange);
+
+                DrawBoundingBox(playerBox, Color.Red);
+                DrawBoundingBox(obstacleBox, Color.Blue);
                 EndMode3D();
                 // Dessin de la barre de progression
                 DrawRectangle(10, 10, 200, 25, Color.LightGray);
@@ -254,11 +299,14 @@ namespace DIMEN
                 DrawRectangleLines(10, 10, 200, 25, Color.Black);
                 // Debug
                 //DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
-                DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
-                DrawText($"Player Speed: {playerVelocity}", 10, 50, 20, Color.Black);
-                DrawText($"Is player falling: {isFalling}", 10, 70, 20, Color.Black); 
-                DrawText($"Is player touching obstacle: {CheckCollisionBoxes(obstacleBox, playerBox)}", 10, 90, 20, Color.Black); 
-                
+                //DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);
+                //DrawText($"Player Speed: {playerVelocity}", 10, 50, 20, Color.Black);
+                //DrawText($"Is player falling: {isFalling}", 10, 70, 20, Color.Black);
+                //DrawText($"Player box: {playerBox.Min}, {playerBox.Max}", 10, 90, 20, Color.Black);
+                //DrawText($"Obstacle box: {obstacleBox.Min}, {obstacleBox.Max}", 10, 110, 20, Color.Black);
+                //DrawText($"Is player touching obstacle: {CheckCollisionBoxes(obstacleBox, playerBox)}", 10, 130, 20, Color.Black);
+
+
 
                 EndDrawing();
             }

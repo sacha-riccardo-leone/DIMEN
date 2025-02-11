@@ -195,8 +195,8 @@ namespace DIMEN
             EmissiveColorLoc = GetShaderLocation(PBRLightingShader, "emissiveColor");
             TextureTilingLoc = GetShaderLocation(PBRLightingShader, "tiling");
             // Create main light source
-            Light1 = PbrLights.CreateLight(0, PbrLightType.Point, new Vector3(30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 100, PBRLightingShader);
-            Light2 = PbrLights.CreateLight(1, PbrLightType.Point, new Vector3(-30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 200, PBRLightingShader);
+            Light1 = PbrLights.CreateLight(0, PbrLightType.Point, new Vector3(30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 300, PBRLightingShader);
+            Light2 = PbrLights.CreateLight(1, PbrLightType.Point, new Vector3(-30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 300, PBRLightingShader);
 
             // Set PBR shader used maps
             int usage = 1;

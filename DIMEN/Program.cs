@@ -16,28 +16,37 @@ namespace DIMEN
             DisableCursor(); // Désactiver le curseur
 
             Shaders.Init();
-            PBRMaterial pBRMaterial = new PBRMaterial("assets/textures/metal/2K/");
-            Model cubeModel = LoadModel("assets/objects/Cube.obj"); // Charger le modèle
+            PBRMaterial SimpleMetalMaterial = new PBRMaterial("assets/textures/metal/2K/");
+            PBRMaterial KeyMaterial = new PBRMaterial("assets/textures/key/");
+
+            Model playerModel = LoadModel("assets/objects/Cube.obj"); // Charger le modèle
+            Model keyModel = LoadModel("assets/objects/Old_Key.obj"); // Charger le modèle
             Model obstacleModel = LoadModel("assets/objects/Obstacle.obj");
-            for (int i = 0; i < cubeModel.MeshCount; i++)
+
+
+            for (int i = 0; i < playerModel.MeshCount; i++)
             {
-                GenMeshTangents(ref cubeModel.Meshes[i]);
+                GenMeshTangents(ref playerModel.Meshes[i]);
    
             }
             for (int i = 0; i < obstacleModel.MeshCount; i++)
             {
                 GenMeshTangents(ref obstacleModel.Meshes[i]);
             }
-
-            if (cubeModel.MaterialCount > 0)
+            for (int i = 0; i < keyModel.MeshCount; i++)
             {
-                cubeModel.Materials[0] = pBRMaterial.Material;
+                GenMeshTangents(ref keyModel.Meshes[i]);
             }
 
-            // Appliquer un matériau PBR (Assurez-vous que pBRMaterial est valide)
-            if (obstacleModel.MaterialCount > 0)
+
+            if (playerModel.MaterialCount > 0)
             {
-                obstacleModel.Materials[0] = pBRMaterial.Material;
+                playerModel.Materials[0] = SimpleMetalMaterial.Material;
+            }
+
+            if (keyModel.MaterialCount > 0)
+            {
+                keyModel.Materials[0] = KeyMaterial.Material;
             }
 
 
@@ -51,22 +60,29 @@ namespace DIMEN
                 Projection = CameraProjection.Perspective
             };
 
+            // Variables du joueur
+            bool playerHasKey = false;
+
             // Dimensions
             Vector3 playerDimensions = new Vector3(1);
             Vector3 obstacleDimensions = new Vector3(8);
-            Vector3 colliderObstacleDimension = obstacleDimensions / 2;
+            Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
             Vector2 planeSize = new Vector2(300, 300);
+
+
+            Vector3 colliderKeyDimensions = keyDimensions / 2;
+            Vector3 colliderObstacleDimension = obstacleDimensions / 2;
 
 
             // Variables pour la gestion du mouvement et de la rotation
             float targetRotationAngle = 0f;
             float currentRotationAngle = 0f;
             float rotationSpeed = 5f;
+            float keyRotationAngle = 0.0f;
 
             // Variables pour la gravité et la physique
             Vector3 playerVelocity = Vector3.Zero;
             float gravity = -0.2f;
-            bool isFalling = false;
             const float GRIDLEVEL = -3f;
             float groundLevel = GRIDLEVEL;
             float friction = 0.9f;
@@ -74,10 +90,12 @@ namespace DIMEN
             float speed = 0.01f; // Vitesse maximale du joueur
 
             // Positions des objets
-            Vector3 playerPosition = new Vector3(0,10,0);
-            Vector3 obstaclePosition = new Vector3(0, 0, 0); // Modifier en fonction de ta scène  
+            Vector3 playerPosition = new Vector3(-10,groundLevel,0);
+            Vector3 obstaclePosition = new Vector3(0, 0, 0);
             Vector3 planePosition = new Vector3(0, -3, 0);
+            Vector3 keyPosition = new Vector3(0);
 
+            BoundingBox keyBox = new BoundingBox();
 
             BoundingBox obstacleBox = new BoundingBox(
                 obstaclePosition - (obstacleDimensions / 2),
@@ -88,25 +106,29 @@ namespace DIMEN
                 playerPosition - (playerDimensions / 2),
                 playerPosition + (playerDimensions / 2)
             );
-            
+
             // Variables pour la vue plan et le cooldown
             bool isTopView = false;
             float topViewDuration = 5.0f;
             float topViewTimer = 0.0f;
             float topViewCooldown = 10.0f;
-            float progress = 1.0f; // Commence rempli (prêt à être utilisé)
-            bool filling = false; // Indique si la jauge est en train de se remplir
+            float progress = 1.0f;
+            bool filling = false; 
             double lastTopViewTime = -topViewCooldown;
             double currentTime;
 
-        
-
-            // Boucle principale
             while (!WindowShouldClose())
             {
                 Shaders.UpdatePBRLighting(camera.Position);
                 float deltaTime = GetFrameTime();
                 currentTime = GetTime();
+                keyRotationAngle++;
+                keyPosition.Y = obstaclePosition.Y + colliderObstacleDimension.Y + 1f;
+                
+                if(CheckCollisionBoxes(keyBox, playerBox))
+                {
+                    playerHasKey = true;
+                }
 
                 // Gestion de la barre de progression (remplissage ou vidage)
                 if (isTopView)
@@ -155,7 +177,11 @@ namespace DIMEN
                     new Vector3(playerPosition.X - 0.5f, playerPosition.Y - 0.5f, playerPosition.Z - 0.5f),
                     new Vector3(playerPosition.X + 0.5f, playerPosition.Y + 0.5f, playerPosition.Z + 0.5f)
                 );
-                
+                keyBox = new BoundingBox(
+                keyPosition - (keyDimensions / 2),
+                keyPosition + (keyDimensions / 2)
+            );
+
 
                 // Appliquer un ralentissement progressif si aucune touche n'est pressée
                 if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D))
@@ -228,6 +254,10 @@ namespace DIMEN
                     {
                         playerPosition.Y = obstaclePosition.Y + colliderObstacleDimension.Y;
                     }
+                    else
+                    {
+                        playerPosition.Y = groundLevel;
+                    }
                 }
                 // Appliquer les mouvements horizontaux (X, Z) indépendamment de la gravité
                 playerPosition.X += playerVelocity.X;
@@ -248,13 +278,11 @@ namespace DIMEN
                 if (playerPosition.Y > groundLevel + 0.5f)
                 {
                     playerVelocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
-                    isFalling = true;
                 }
                 else
                 {
                     playerVelocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
                     playerPosition.Y = groundLevel + 0.5f;  // Maintien le joueur sur le sol
-                    isFalling = false;
                 }
                 
 
@@ -300,18 +328,27 @@ namespace DIMEN
                 BeginDrawing();
                 ClearBackground(Color.RayWhite);
                 BeginMode3D(camera);
+                Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
+                keyModel.Transform = rotationMatrix;
+
                 DrawPlane(planePosition, planeSize, Color.Gray);
 
-                DrawModel(cubeModel, playerPosition, 1, Color.White);
+                DrawModel(playerModel, playerPosition, 1, Color.White);
                 DrawModel(obstacleModel, obstaclePosition, 1, Color.White);
+                if (!playerHasKey)
+                {
+                    DrawModel(keyModel, keyPosition, 1, Color.White);
+                    DrawBoundingBox(keyBox, Color.Yellow);
+                }
 
                 DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
                 DrawSphere(Shaders.Light2.Position, 1.0f, Color.Orange);
                 DrawSphere(Shaders.Light3.Position, 1.0f, Color.Orange);
                 DrawSphere(Shaders.Light4.Position, 1.0f, Color.Orange);
 
-                DrawBoundingBox(playerBox, Color.Red);
-                DrawBoundingBox(obstacleBox, Color.Blue);
+                DrawBoundingBox(playerBox, Color.Blue);
+                DrawBoundingBox(obstacleBox, Color.Red);
+
                 EndMode3D();
                 // Dessin de la barre de progression
                 DrawRectangle(10, 10, 200, 25, Color.LightGray);
@@ -326,7 +363,6 @@ namespace DIMEN
                 //DrawText($"Obstacle box: {obstacleBox.Min}, {obstacleBox.Max}", 10, 110, 20, Color.Black);
                 //DrawText($"Is player touching obstacle: {CheckCollisionBoxes(obstacleBox, playerBox)}", 10, 130, 20, Color.Black);
                 DrawText($"isTopView :{isTopView}", 10, 40, 20, Color.Black);
-
 
                 EndDrawing();
             }

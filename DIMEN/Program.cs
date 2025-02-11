@@ -67,16 +67,16 @@ namespace DIMEN
             Vector3 playerVelocity = Vector3.Zero;
             float gravity = -0.2f;
             bool isFalling = false;
-            const float GRIDLEVEL = 0.5f;
+            const float GRIDLEVEL = -3f;
             float groundLevel = GRIDLEVEL;
             float friction = 0.9f;
             float deceleration = 0.65f; // Facteur de ralentissement
             float speed = 0.01f; // Vitesse maximale du joueur
 
             // Positions des objets
-            Vector3 playerPosition = new Vector3(10,1,10);
+            Vector3 playerPosition = new Vector3(0,10,0);
             Vector3 obstaclePosition = new Vector3(0, 0, 0); // Modifier en fonction de ta scène  
-            Vector3 planePosition = new Vector3(0, 0, 0);
+            Vector3 planePosition = new Vector3(0, -3, 0);
 
 
             BoundingBox obstacleBox = new BoundingBox(
@@ -96,7 +96,6 @@ namespace DIMEN
             float topViewCooldown = 10.0f;
             float progress = 1.0f; // Commence rempli (prêt à être utilisé)
             bool filling = false; // Indique si la jauge est en train de se remplir
-
             double lastTopViewTime = -topViewCooldown;
             double currentTime;
 
@@ -106,10 +105,9 @@ namespace DIMEN
             while (!WindowShouldClose())
             {
                 Shaders.UpdatePBRLighting(camera.Position);
-               
                 float deltaTime = GetFrameTime();
                 currentTime = GetTime();
-                
+
                 // Gestion de la barre de progression (remplissage ou vidage)
                 if (isTopView)
                 {
@@ -157,6 +155,7 @@ namespace DIMEN
                     new Vector3(playerPosition.X - 0.5f, playerPosition.Y - 0.5f, playerPosition.Z - 0.5f),
                     new Vector3(playerPosition.X + 0.5f, playerPosition.Y + 0.5f, playerPosition.Z + 0.5f)
                 );
+                
 
                 // Appliquer un ralentissement progressif si aucune touche n'est pressée
                 if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D))
@@ -165,18 +164,20 @@ namespace DIMEN
                     if (playerVelocity.Length() < 0.01f) playerVelocity = Vector3.Zero; // Éviter une vitesse résiduelle
                 }
 
-                if (CheckCollisionBoxes(playerBox, obstacleBox))
+                if (CheckCollisionBoxes(playerBox, obstacleBox) && !isTopView)
                 {
                     // Déterminer les distances sur chaque axe
                     float deltaX = playerPosition.X - obstaclePosition.X;
                     float deltaZ = playerPosition.Z - obstaclePosition.Z;
+                    float deltaY = playerPosition.Y - obstaclePosition.Y;  // Nouvelle distance sur l'axe Y
 
                     // Calculer la profondeur de la collision sur chaque côté
                     float overlapX = playerDimensions.X / 2 + obstacleDimensions.X / 2 - Math.Abs(deltaX);
-                    float overlapZ = playerDimensions.Y / 2 + obstacleDimensions.Y / 2 - Math.Abs(deltaZ);
+                    float overlapZ = playerDimensions.Z / 2 + obstacleDimensions.Z / 2 - Math.Abs(deltaZ);
+                    float overlapY = playerDimensions.Y / 2 + obstacleDimensions.Y / 2 - Math.Abs(deltaY);  // Profondeur sur Y
 
-                    // Déterminer la direction de la collision
-                    if (overlapX < overlapZ)
+                    // Détecter les collisions horizontales
+                    if (overlapX < overlapZ && overlapX < overlapY)
                     {
                         // Collision sur les côtés (axe X)
                         if (deltaX > 0)
@@ -190,7 +191,8 @@ namespace DIMEN
                             playerPosition.X -= overlapX;
                         }
                     }
-                    else
+                    // Détecter les collisions devant/arrière
+                    else if (overlapZ < overlapX && overlapZ < overlapY)
                     {
                         // Collision sur le devant ou l'arrière (axe Z)
                         if (deltaZ > 0)
@@ -204,17 +206,32 @@ namespace DIMEN
                             playerPosition.Z -= overlapZ;
                         }
                     }
+                    // Détecter les collisions sur le dessus (axe Y)
+                    else
+                    {
+                        // Collision sur le dessus (axe Y)
+                        if (deltaY > 0)
+                        {
+                            // Le joueur est en dessous de l'obstacle, glisse vers le bas
+                            playerPosition.Y += overlapY;
+                        }
+                        else
+                        {
+                            // Le joueur est au-dessus de l'obstacle, glisse vers le haut
+                            playerPosition.Y -= overlapY;
+                        }
+                    }
                 }
-
-
-
                 if (isTopView)
                 {
                     if (CheckCollisionBoxes(playerBox, obstacleBox))
                     {
-                        playerPosition.Y = obstacleDimensions.Y; // Place le joueur au sommet
+                        playerPosition.Y = obstaclePosition.Y + colliderObstacleDimension.Y;
                     }
                 }
+                // Appliquer les mouvements horizontaux (X, Z) indépendamment de la gravité
+                playerPosition.X += playerVelocity.X;
+                playerPosition.Z += playerVelocity.Z;
 
                 // Limiter la vitesse maximale
                 if (playerVelocity.Length() > speed)
@@ -228,7 +245,7 @@ namespace DIMEN
                 }
 
                 // Appliquer la gravité uniquement si le joueur n'est pas sur le sol
-                if (playerPosition.Y > groundLevel && !CheckCollisionBoxes(obstacleBox, playerBox))
+                if (playerPosition.Y > groundLevel + 0.5f)
                 {
                     playerVelocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
                     isFalling = true;
@@ -236,9 +253,10 @@ namespace DIMEN
                 else
                 {
                     playerVelocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
-                    playerPosition.Y = groundLevel;  // Maintien le joueur sur le sol
+                    playerPosition.Y = groundLevel + 0.5f;  // Maintien le joueur sur le sol
                     isFalling = false;
                 }
+                
 
                 // Changer de mode de vue (vue de dessus ou perspective)
                 if (IsKeyPressed(KeyboardKey.Q) && progress >= 1.0f)
@@ -289,6 +307,8 @@ namespace DIMEN
 
                 DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
                 DrawSphere(Shaders.Light2.Position, 1.0f, Color.Orange);
+                DrawSphere(Shaders.Light3.Position, 1.0f, Color.Orange);
+                DrawSphere(Shaders.Light4.Position, 1.0f, Color.Orange);
 
                 DrawBoundingBox(playerBox, Color.Red);
                 DrawBoundingBox(obstacleBox, Color.Blue);
@@ -305,7 +325,7 @@ namespace DIMEN
                 //DrawText($"Player box: {playerBox.Min}, {playerBox.Max}", 10, 90, 20, Color.Black);
                 //DrawText($"Obstacle box: {obstacleBox.Min}, {obstacleBox.Max}", 10, 110, 20, Color.Black);
                 //DrawText($"Is player touching obstacle: {CheckCollisionBoxes(obstacleBox, playerBox)}", 10, 130, 20, Color.Black);
-
+                DrawText($"isTopView :{isTopView}", 10, 40, 20, Color.Black);
 
 
                 EndDrawing();

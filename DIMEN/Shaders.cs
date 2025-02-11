@@ -161,6 +161,8 @@ namespace DIMEN
         internal static Shader PBRLightingShader;
         internal static PbrLight Light1;
         internal static PbrLight Light2;
+        internal static PbrLight Light3;
+        internal static PbrLight Light4;
         internal static int EmissivePowerLoc;
         internal static int EmissiveColorLoc;
         internal static int TextureTilingLoc;
@@ -195,8 +197,10 @@ namespace DIMEN
             EmissiveColorLoc = GetShaderLocation(PBRLightingShader, "emissiveColor");
             TextureTilingLoc = GetShaderLocation(PBRLightingShader, "tiling");
             // Create main light source
-            Light1 = PbrLights.CreateLight(0, PbrLightType.Point, new Vector3(30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 300, PBRLightingShader);
-            Light2 = PbrLights.CreateLight(1, PbrLightType.Point, new Vector3(-30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 300, PBRLightingShader);
+            Light1 = PbrLights.CreateLight(0, PbrLightType.Point, new Vector3(30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 250, PBRLightingShader);
+            Light2 = PbrLights.CreateLight(1, PbrLightType.Point, new Vector3(-30, 10, 0) , Vector3.Zero, new Color(255, 255, 255, 255), 250, PBRLightingShader);
+            Light3 = PbrLights.CreateLight(2, PbrLightType.Point, new Vector3(0, 10, 30), Vector3.Zero, new Color(255, 255, 255, 255), 250, PBRLightingShader);
+            Light4 = PbrLights.CreateLight(3, PbrLightType.Point, new Vector3(0, 10, -30), Vector3.Zero, new Color(255, 255, 255, 255), 250, PBRLightingShader);
 
             // Set PBR shader used maps
             int usage = 1;

@@ -159,6 +159,8 @@ namespace DIMEN
     public static class Shaders
     {
         public static Shader PBRLightingShader;
+        public static Shader SkyboxShader;
+        public static Shader CubemapShader;
         public static PbrLight Light1;
         public static PbrLight Light2;
         public static PbrLight Light3;
@@ -166,8 +168,19 @@ namespace DIMEN
         public static int EmissivePowerLoc;
         public static int EmissiveColorLoc;
         public static int TextureTilingLoc;
+        public static Mesh SKYBOX_MESH = GenMeshCube(1, 1, 1);
+
         public static unsafe void Init()
         {
+
+            // Skybox shader
+            SkyboxShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
+            SetShaderValue(SkyboxShader, GetShaderLocation(SkyboxShader, "environmentMap"), (int)MaterialMapIndex.Cubemap, ShaderUniformDataType.Int);
+            SetShaderValue(SkyboxShader, GetShaderLocation(SkyboxShader, "doGamma"), 1, ShaderUniformDataType.Int);
+            SetShaderValue(SkyboxShader, GetShaderLocation(SkyboxShader, "vflipped"), 1, ShaderUniformDataType.Int);
+            // Cubemap shader
+            CubemapShader = LoadShader("assets/shaders/cubemap.vs", "assets/shaders/cubemap.fs");
+            SetShaderValue(CubemapShader, GetShaderLocation(CubemapShader, "equirectangularMap"), 0, ShaderUniformDataType.Int);
             // PBR lighting shader
             PBRLightingShader = LoadShader("assets/shaders/lighting.vs", "assets/shaders/lighting.fs");
 
@@ -240,6 +253,115 @@ namespace DIMEN
             SetShaderValue(shader, light.ColorLoc, light.Color, ShaderUniformDataType.Vec4);
             SetShaderValue(shader, light.IntensityLoc, light.Intensity, ShaderUniformDataType.Float);
         }
+        /// <summary>Draws a skybox object to the screen (draw before anything else in the scene).</summary>
+        /// <param name="material">Skybox material to use.</param>
+        internal static void DrawSkybox(Material material)
+        {
+            Rlgl.DisableBackfaceCulling();
+            Rlgl.DisableDepthMask();
+            DrawMesh(SKYBOX_MESH, material, Matrix4x4.Identity);
+            Rlgl.EnableBackfaceCulling();
+            Rlgl.EnableDepthMask();
+        }
+
+        /// <summary>Loads a skybox and configures its material.</summary>
+        /// <param name="path">Path to .hdr file.</param>
+        /// <returns>Configured skybox material.</returns>
+        internal static Material LoadSkybox(string path)
+        {
+            Texture2D panorama = LoadTexture(path);
+            Material mat = LoadMaterialDefault();
+            mat.Shader = SkyboxShader;
+            Texture2D cubemap = GenTextureCubemap(panorama, 512, PixelFormat.UncompressedR8G8B8A8);
+            SetMaterialTexture(ref mat, MaterialMapIndex.Cubemap, cubemap);
+            UnloadTexture(panorama); // Unload unused texture;
+
+            return mat;
+        }
+
+        /// <summary>Genreates a cubemap texture by processing data into a cubemap shader.</summary>
+        /// <param name="panorama">2D texture to use for cubemap.</param>
+        /// <param name="size">Pixel size of the cubemap.</param>
+        /// <param name="format">Pixel format to use.</param>
+        /// <returns>Configured cubemap texture.</returns>
+        internal static unsafe Texture2D GenTextureCubemap(Texture2D panorama, int size, PixelFormat format)
+        {
+            Texture2D cubemap;
+
+            // Disable Backface culling to render inside the cube
+            Rlgl.DisableBackfaceCulling();
+
+            // Setup frame buffer
+            uint rbo = Rlgl.LoadTextureDepth(size, size, true);
+            cubemap.Id = Rlgl.LoadTextureCubemap(null, size, format);
+
+            uint fbo = Rlgl.LoadFramebuffer(size, size);
+            Rlgl.FramebufferAttach(fbo, rbo, FramebufferAttachType.Depth, FramebufferAttachTextureType.Renderbuffer, 0);
+            Rlgl.FramebufferAttach(fbo, cubemap.Id, FramebufferAttachType.ColorChannel0, FramebufferAttachTextureType.CubemapPositiveY, 0);
+
+            // Check if framebuffer is valid
+
+            if (Rlgl.FramebufferComplete(fbo))
+            {
+                Console.WriteLine($"FBO: [ID {fbo}] Framebuffer object created successfully");
+            }
+
+            // Draw to framebuffer
+            Rlgl.EnableShader(CubemapShader.Id);
+
+            // Define projection matrix and send it to the shader
+            Matrix4x4 matFboProjection = Raymath.MatrixPerspective(90.0f * DEG2RAD, 1.0f, Rlgl.CULL_DISTANCE_NEAR, Rlgl.CULL_DISTANCE_FAR);
+            Rlgl.SetUniformMatrix(CubemapShader.Locs[(int)ShaderLocationIndex.MatrixProjection], matFboProjection);
+
+            // Define view matrix for every side of the cube
+            Matrix4x4[] fboViews = new Matrix4x4[]
+            {
+        Raymath.MatrixLookAt(Vector3.Zero, new Vector3(-1.0f,  0.0f,  0.0f), new Vector3( 0.0f, -1.0f,  0.0f)),
+        Raymath.MatrixLookAt(Vector3.Zero, new Vector3( 1.0f,  0.0f,  0.0f), new Vector3( 0.0f, -1.0f,  0.0f)),
+        Raymath.MatrixLookAt(Vector3.Zero, new Vector3( 0.0f,  1.0f,  0.0f), new Vector3( 0.0f,  0.0f, -1.0f)),
+        Raymath.MatrixLookAt(Vector3.Zero, new Vector3( 0.0f, -1.0f,  0.0f), new Vector3( 0.0f,  0.0f, 1.0f)),
+        Raymath.MatrixLookAt(Vector3.Zero, new Vector3( 0.0f,  0.0f, -1.0f), new Vector3( 0.0f, -1.0f,  0.0f)),
+        Raymath.MatrixLookAt(Vector3.Zero, new Vector3( 0.0f,  0.0f,  1.0f), new Vector3( 0.0f, -1.0f,  0.0f)),
+            };
+
+            // Set viewport to current fbo dimensions
+            Rlgl.Viewport(0, 0, size, size);
+
+            // Activate and enable texture for drawing to cubemap faces
+            Rlgl.ActiveTextureSlot(0);
+            Rlgl.EnableTexture(panorama.Id);
+
+            for (int i = 0; i < 6; i++)
+            {
+                // Set the view matrix for current face
+                Rlgl.SetUniformMatrix(CubemapShader.Locs[(int)ShaderLocationIndex.MatrixView], fboViews[i]);
+
+                // Select the current cubemap face attachment for the fbo
+                Rlgl.FramebufferAttach(fbo, cubemap.Id, FramebufferAttachType.ColorChannel0, FramebufferAttachTextureType.CubemapPositiveX + i, 0);
+                Rlgl.EnableFramebuffer(fbo);
+
+                Rlgl.ClearScreenBuffers();
+                Rlgl.LoadDrawCube();
+            }
+
+            // Unload framebuffer and reset state
+            Rlgl.DisableShader();
+            Rlgl.DisableTexture();
+            Rlgl.DisableFramebuffer();
+
+            Rlgl.UnloadFramebuffer(fbo);
+
+            Rlgl.Viewport(0, 0, GetScreenWidth(), GetScreenHeight());
+            Rlgl.EnableBackfaceCulling();
+
+            cubemap.Width = size;
+            cubemap.Height = size;
+            cubemap.Mipmaps = 1;
+            cubemap.Format = format;
+
+            return cubemap;
+        }
+
 
     }
 }

@@ -3,11 +3,24 @@ using static Raylib_cs.Raylib;
 using System.Numerics;
 using System;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace DIMEN
 {
     public class Program
     {
+
+        public static unsafe void InitModels(Model model, PBRMaterial material)
+        {
+            for (int i = 0; i < model.MeshCount; i++)
+            {
+                GenMeshTangents(ref model.Meshes[i]);
+            }
+            if (model.MaterialCount > 0)
+            {
+                model.Materials[0] = material.Material;
+            }
+        }
         public static unsafe void Main(string[] args)
         {
             // Initialisation
@@ -16,39 +29,21 @@ namespace DIMEN
             DisableCursor(); // Désactiver le curseur
 
             Shaders.Init();
-            PBRMaterial SimpleMetalMaterial = new PBRMaterial("assets/textures/metal/2K/");
+            PBRMaterial defaultMaterial = new PBRMaterial("assets/textures/default/");
+            PBRMaterial metalMaterial = new PBRMaterial("assets/textures/metal/2K/");
             PBRMaterial KeyMaterial = new PBRMaterial("assets/textures/key/");
 
-            Model playerModel = LoadModel("assets/objects/Cube.obj"); // Charger le modèle
-            Model keyModel = LoadModel("assets/objects/Old_Key.obj"); // Charger le modèle
+            Model playerModel = LoadModel("assets/objects/Cube.obj");
+            Model keyModel = LoadModel("assets/objects/Old_Key.obj");
             Model obstacleModel = LoadModel("assets/objects/Obstacle.obj");
+            Model openDoorModel = LoadModel("assets/objects/opendoor.obj");
+            Model closedDoorModel = LoadModel("assets/objects/closeddoor.obj");
 
-
-            for (int i = 0; i < playerModel.MeshCount; i++)
-            {
-                GenMeshTangents(ref playerModel.Meshes[i]);
-   
-            }
-            for (int i = 0; i < obstacleModel.MeshCount; i++)
-            {
-                GenMeshTangents(ref obstacleModel.Meshes[i]);
-            }
-            for (int i = 0; i < keyModel.MeshCount; i++)
-            {
-                GenMeshTangents(ref keyModel.Meshes[i]);
-            }
-
-
-            if (playerModel.MaterialCount > 0)
-            {
-                playerModel.Materials[0] = SimpleMetalMaterial.Material;
-            }
-
-            if (keyModel.MaterialCount > 0)
-            {
-                keyModel.Materials[0] = KeyMaterial.Material;
-            }
-
+            InitModels(playerModel, metalMaterial);
+            InitModels(obstacleModel, defaultMaterial);
+            InitModels(keyModel, KeyMaterial);
+            InitModels(openDoorModel, defaultMaterial);
+            InitModels(closedDoorModel, defaultMaterial);
 
             // Configuration de la caméra
             Camera3D camera = new Camera3D
@@ -68,11 +63,9 @@ namespace DIMEN
             Vector3 obstacleDimensions = new Vector3(8);
             Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
             Vector2 planeSize = new Vector2(300, 300);
+            Vector3 doorDimensions = new Vector3(1.4f, 2.2f, 0.5f);
 
-
-            Vector3 colliderKeyDimensions = keyDimensions / 2;
             Vector3 colliderObstacleDimension = obstacleDimensions / 2;
-
 
             // Variables pour la gestion du mouvement et de la rotation
             float targetRotationAngle = 0f;
@@ -93,9 +86,20 @@ namespace DIMEN
             Vector3 playerPosition = new Vector3(-10,groundLevel,0);
             Vector3 obstaclePosition = new Vector3(0, 0, 0);
             Vector3 planePosition = new Vector3(0, -3, 0);
+
             Vector3 keyPosition = new Vector3(0);
 
-            BoundingBox keyBox = new BoundingBox();
+            // C
+            Vector3 center = obstaclePosition;
+            Vector3 halfSize = obstacleDimensions / 2;
+            Vector3 doorPosition = center + new Vector3(0, groundLevel + doorDimensions.Y / 2, halfSize.Z);
+
+
+            BoundingBox doorBox = new BoundingBox(
+                doorPosition - doorDimensions / 2,  // Coin inférieur de la BoundingBox
+                doorPosition + doorDimensions / 2   // Coin supérieur de la BoundingBox
+            );
+
 
             BoundingBox obstacleBox = new BoundingBox(
                 obstaclePosition - (obstacleDimensions / 2),
@@ -106,6 +110,8 @@ namespace DIMEN
                 playerPosition - (playerDimensions / 2),
                 playerPosition + (playerDimensions / 2)
             );
+
+            BoundingBox keyBox = new BoundingBox();
 
             // Variables pour la vue plan et le cooldown
             bool isTopView = false;
@@ -124,8 +130,8 @@ namespace DIMEN
                 currentTime = GetTime();
                 keyRotationAngle++;
                 keyPosition.Y = obstaclePosition.Y + colliderObstacleDimension.Y + 1f;
-                
-                if(CheckCollisionBoxes(keyBox, playerBox))
+
+                if (CheckCollisionBoxes(keyBox, playerBox))
                 {
                     playerHasKey = true;
                 }
@@ -180,8 +186,8 @@ namespace DIMEN
                 keyBox = new BoundingBox(
                 keyPosition - (keyDimensions / 2),
                 keyPosition + (keyDimensions / 2)
-            );
-
+                );
+                
 
                 // Appliquer un ralentissement progressif si aucune touche n'est pressée
                 if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D))
@@ -331,10 +337,12 @@ namespace DIMEN
                 Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
                 keyModel.Transform = rotationMatrix;
 
-                DrawPlane(planePosition, planeSize, Color.Gray);
+                
 
                 DrawModel(playerModel, playerPosition, 1, Color.White);
                 DrawModel(obstacleModel, obstaclePosition, 1, Color.White);
+                DrawModel(closedDoorModel, doorPosition, 1, Color.White);
+
                 if (!playerHasKey)
                 {
                     DrawModel(keyModel, keyPosition, 1, Color.White);
@@ -348,12 +356,14 @@ namespace DIMEN
 
                 DrawBoundingBox(playerBox, Color.Blue);
                 DrawBoundingBox(obstacleBox, Color.Red);
+                DrawBoundingBox(doorBox, Color.Green);
 
                 EndMode3D();
                 // Dessin de la barre de progression
                 DrawRectangle(10, 10, 200, 25, Color.LightGray);
                 DrawRectangle(10, 10, (int)(200 * progress), 25, Color.Green);
                 DrawRectangleLines(10, 10, 200, 25, Color.Black);
+
                 // Debug
                 //DrawText($"Position: X:{playerPosition.X:F2}, Y:{playerPosition.Y:F2}, Z:{playerPosition.Z:F2}", 10, 10, 20, Color.Black);
                 //DrawText($"FPS: {GetFPS()}", 10, 30, 20, Color.Black);

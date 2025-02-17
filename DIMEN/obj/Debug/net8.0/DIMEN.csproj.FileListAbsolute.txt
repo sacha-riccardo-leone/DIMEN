@@ -97,3 +97,17 @@ C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\P
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\2K\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\key\Image_Metalness2.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\default\Image_Diffuse.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\default\Image_Emission.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\default\Image_Metalness.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\default\Image_Normal.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\default\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\default\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\ui_ux\logo\logoDimen.kra
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\ui_ux\logo\logoDimen.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\opendoor.m3d
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\closeddoor.m3d
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\closeddoor.mtl
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\closeddoor.obj
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\opendoor.mtl
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\opendoor.obj

@@ -12,15 +12,15 @@ namespace DIMEN
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>Represents an instance of a PBR material.</summary>
-    internal unsafe struct PBRMaterial
+    public unsafe struct PBRMaterial
     {
-        internal Material Material;
-        internal Dictionary<MaterialMapIndex, Texture2D> Maps;
+        public Material Material;
+        public Dictionary<MaterialMapIndex, Texture2D> Maps;
 
         /// <summary>Sets one of the material's maps.</summary>
         /// <param name="map">Map type to use.</param>
         /// <param name="texture">Texture to use.</param>
-        internal void SetMap(MaterialMapIndex map, Texture2D texture)
+        public void SetMap(MaterialMapIndex map, Texture2D texture)
         {
             SetMaterialTexture(ref Material, map, texture);
             UnloadTexture(Maps[map]); // Unload unused map
@@ -29,7 +29,7 @@ namespace DIMEN
 
         /// <summary>Creates an instance of PBR material.</summary>
         /// <param name="mapFolder"></param>
-        internal PBRMaterial(string mapFolder)
+        public PBRMaterial(string mapFolder)
         {
             Material = LoadMaterialDefault();
             Material.Shader = Shaders.PBRLightingShader;
@@ -156,17 +156,17 @@ namespace DIMEN
             SetShaderValue(shader, light.IntensityLoc, light.Intensity, ShaderUniformDataType.Float);
         }
     }
-    internal static class Shaders
+    public static class Shaders
     {
-        internal static Shader PBRLightingShader;
-        internal static PbrLight Light1;
-        internal static PbrLight Light2;
-        internal static PbrLight Light3;
-        internal static PbrLight Light4;
-        internal static int EmissivePowerLoc;
-        internal static int EmissiveColorLoc;
-        internal static int TextureTilingLoc;
-        internal static unsafe void Init()
+        public static Shader PBRLightingShader;
+        public static PbrLight Light1;
+        public static PbrLight Light2;
+        public static PbrLight Light3;
+        public static PbrLight Light4;
+        public static int EmissivePowerLoc;
+        public static int EmissiveColorLoc;
+        public static int TextureTilingLoc;
+        public static unsafe void Init()
         {
             // PBR lighting shader
             PBRLightingShader = LoadShader("assets/shaders/lighting.vs", "assets/shaders/lighting.fs");
@@ -213,7 +213,7 @@ namespace DIMEN
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// <summary>Updates the environement's PBR lighting.</summary>
         /// <param name="viewPos">Camera position of the currently rendered scene.</param>
-        internal static unsafe void UpdatePBRLighting(Vector3 viewPos)
+        public static unsafe void UpdatePBRLighting(Vector3 viewPos)
         {
             SetShaderValue(PBRLightingShader, PBRLightingShader.Locs[(int)ShaderLocationIndex.VectorView], viewPos, ShaderUniformDataType.Vec3);
             //UpdateLight(PBRLightingShader, GlobalLight);

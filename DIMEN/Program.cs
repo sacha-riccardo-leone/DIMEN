@@ -35,27 +35,17 @@ namespace DIMEN
             float keyRotationAngle = 0.0f;
 
             // Variables pour la gravité et la physique
-            float gravity = -0.2f;
             const float GRIDLEVEL = -3f;
             float groundLevel = GRIDLEVEL;
 
             // Positions des objets
-            Vector3 planePosition = new Vector3(0, -3, 0);
+            Vector3 planePosition = new Vector3(0, GRIDLEVEL, 0);
             Vector3 keyPosition = new Vector3(0);
-            BoundingBox keyBox = new BoundingBox();
 
             // Variables pour la vue plan et le cooldown
             bool isTopView = false;
-            float topViewDuration = 5.0f;
-            float topViewTimer = 0.0f;
-            float topViewCooldown = 10.0f;
-            float progress = 1.0f;
-            bool filling = false; 
-            
-            // Variables pour la porte
-            bool isDoorOpen = false;
-            bool playerHasKey = false;
 
+            Cooldown cooldown = new Cooldown(5.0f);
 
             DimensionCamera dimensionCamera = new DimensionCamera();
 
@@ -78,12 +68,11 @@ namespace DIMEN
  
             Vector3 playerDimensions = new Vector3(1);
             Player player1 = new(
-                "assets/textures/metal/player/",
+                "assets/textures/default/",
                 "assets/objects/Cube.obj",
                 playerDimensions,
                 groundLevel
             );
-
 
             while (!WindowShouldClose())
             {
@@ -91,15 +80,13 @@ namespace DIMEN
                 float deltaTime = GetFrameTime();
                 keyRotationAngle++;
                 keyPosition.Y = obstaclePosition.Y + colliderObstacleDimension.Y + 1f;
+                BoundingBox keyBox = new BoundingBox(keyPosition - (keyDimensions / 2), keyPosition + (keyDimensions / 2));
 
-                if (CheckCollisionBoxes(keyBox, player1.Box))
-                {
-                    playerHasKey = true;
-                }
                 if (IsKeyPressed(KeyboardKey.E) && !isTopView)
                 {
                     targetRotationAngle += 90f;
                 }
+
                 // Interpolation fluide de la rotation
                 currentRotationAngle = Raymath.Lerp(currentRotationAngle, targetRotationAngle, rotationSpeed * deltaTime);
                 // Calcul de l'angle et direction du mouvement
@@ -107,123 +94,18 @@ namespace DIMEN
                 Vector3 moveDirection = new Vector3(MathF.Sin(radians), 0, MathF.Cos(radians));
                 Vector3 strafeDirection = new Vector3(MathF.Cos(radians), 0, -MathF.Sin(radians));
 
-                // Déplacements du joueur (avant/arrière et latéraux)
-                if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) player1.MovePlayerUp(moveDirection);
-                if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) player1.MovePlayerDown(moveDirection);
-                if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) player1.MovePlayerLeft(strafeDirection);
-                if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) player1.MovePlayerRight(strafeDirection);
-
                 dimensionCamera.PlayerPosition = player1.Position;
                 dimensionCamera.Radians = radians;
                 dimensionCamera.MoveDirection = moveDirection;
 
-                player1.Update();
-
-                keyBox = new BoundingBox(
-                    keyPosition - (keyDimensions / 2),
-                    keyPosition + (keyDimensions / 2)
-                );
-                
-                // Appliquer un ralentissement progressif si aucune touche n'est pressée
-                if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D))
+                if (CheckCollisionBoxes(keyBox, player1.Box))
                 {
-                    player1.Brake();
+                    player1.HasKey = true;
                 }
-
-                if (CheckCollisionBoxes(player1.Box, obstacle1.ObstacleBox) && !isTopView)
-                {
-                    // Déterminer les distances sur chaque axe
-                    float deltaX = player1.Position.X - obstaclePosition.X;
-                    float deltaZ = player1.Position.Z - obstaclePosition.Z;
-                    float deltaY = player1.Position.Y - obstaclePosition.Y;  // Nouvelle distance sur l'axe Y
-
-                    // Calculer la profondeur de la collision sur chaque côté
-                    float overlapX = player1.Dimensions.X/2 + obstacle1.ObstacleDimensions.X/2 - Math.Abs(deltaX);
-                    float overlapZ = player1.Dimensions.Z/2 + obstacle1.ObstacleDimensions.Z / 2 - Math.Abs(deltaZ);
-                    float overlapY = player1.Dimensions.Y/2+ obstacle1.ObstacleDimensions.Y/2 - Math.Abs(deltaY);  // Profondeur sur Y
-
-                    // Détecter les collisions horizontales
-                    if (overlapX < overlapZ && overlapX < overlapY)
-                    {
-                        // Collision sur les côtés (axe X)
-                        if (deltaX > 0)
-                        {
-                            // Glissement vers la droite
-                            player1.Position.X += overlapX;
-                        }
-                        else
-                        {
-                            // Glissement vers la gauche
-                            player1.Position.X -= overlapX;
-                        }
-                    }
-                    // Détecter les collisions devant/arrière
-                    else if (overlapZ < overlapX && overlapZ < overlapY)
-                    {
-                        // Collision sur le devant ou l'arrière (axe Z)
-                        if (deltaZ > 0)
-                        {
-                            // Glissement vers l'avant
-                            player1.Position.Z += overlapZ;
-                        }
-                        else
-                        {
-                            // Glissement vers l'arrière
-                            player1.Position.Z -= overlapZ;
-                        }
-                    }
-                    // Détecter les collisions sur le dessus (axe Y)
-                    else
-                    {
-                        // Collision sur le dessus (axe Y)
-                        if (deltaY > 0)
-                        {
-                            // Le joueur est en dessous de l'obstacle, glisse vers le bas
-                            player1.Position.Y += overlapY - 0.01f;
-                        }
-                        else
-                        {
-                            // Le joueur est au-dessus de l'obstacle, glisse vers le haut
-                            player1.Position.Y -= overlapY - 0.01f;
-                        }
-                    }
-                }
-
-                if (isTopView)
-                {
-                    if (CheckCollisionBoxes(player1.Box, obstacle1.ObstacleBox))
-                    {
-                        player1.Position.Y = obstaclePosition.Y + colliderObstacleDimension.Y;
-                    }
-                    else
-                    {
-                        player1.Position.Y = groundLevel;
-                    }
-                }
-                // Appliquer les mouvements horizontaux (X, Z) indépendamment de la gravité
-                player1.Position.X += player1.Velocity.X;
-                player1.Position.Z += player1.Velocity.Z;
-
-                // Limiter la vitesse maximale
+                player1.Update(moveDirection, strafeDirection, deltaTime);
                 player1.LimitSpeed();
-                
-
-                if (player1.Velocity.Y > gravity)
-                {
-                    player1.Velocity.Y = gravity;
-                }
-
-                // Appliquer la gravité uniquement si le joueur n'est pas sur le sol
-                if (player1.Position.Y > groundLevel + 0.5f)
-                {
-                    player1.Velocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
-                }
-                else
-                {
-                    player1.Velocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
-                    player1.Position.Y = groundLevel + 0.5f;  // Maintien le joueur sur le sol
-                }
-
+                player1.HandleCollision(obstacle1, isTopView);
+                               
                 // Changer de mode de vue (vue de dessus ou perspective)
                 if (IsKeyPressed(KeyboardKey.Q))
                 {
@@ -231,47 +113,44 @@ namespace DIMEN
                     {
                         // Si la vue est déjà activée, désactive-la immédiatement
                         isTopView = false;
-                        progress = 0.0f;
-                        filling = true; // Recommence le remplissage
+                        cooldown.Progress = 0.0f;
+                        cooldown.Filling = true; // Recommence le remplissage
                     }
-                    else if (progress >= 1.0f) // Ne peut réactiver la vue de dessus que si le cooldown est terminé
+                    else if (cooldown.Progress >= 1.0f) // Ne peut réactiver la vue de dessus que si le cooldown est terminé
                     {
                         // Sinon, active la vue de dessus
                         isTopView = true;
-                        topViewTimer = 0.0f;
-                        filling = false;
+                        cooldown.TotalCooldown = 0.0f;
+                        cooldown.Filling = false;
                     }
                 }
-
                 // Gestion de la barre de progression (remplissage ou vidage)
                 if (isTopView)
                 {
-                    progress -= deltaTime / topViewDuration;
-                    if (progress <= 0.0f)
+                    cooldown.Progress -= deltaTime / cooldown.Duration;
+                    if (cooldown.Progress <= 0.0f)
                     {
-                        progress = 0.0f;
-                        filling = true;
+                        cooldown.Progress = 0.0f;
+                        cooldown.Filling = true;
                     }
                 }
-                else if (filling)
+                else if (cooldown.Filling)
                 {
-                    progress += deltaTime / topViewCooldown;
-                    if (progress >= 1.0f)
+                    cooldown.Progress += deltaTime / cooldown.Duration;
+                    if (cooldown.Progress >= 1.0f)
                     {
-                        progress = 1.0f;
-                        filling = false;
+                        cooldown.Progress = 1.0f;
+                        cooldown.Filling = false;
                     }
                 }
-
-
                 // Si en vue de dessus
                 if (isTopView)
                 {
-                    topViewTimer += deltaTime;
-                    if (topViewTimer >= topViewDuration)
+                    cooldown.Timer += deltaTime;
+                    if (cooldown.Timer >= cooldown.Duration)
                     {
                         isTopView = false; // Désactiver la vue de dessus après topViewDuration
-                        filling = true; // Démarrer le remplissage après la désactivation
+                        cooldown.Filling = true; // Démarrer le remplissage après la désactivation
                     }
                     dimensionCamera.TopViewPosition();
                 }
@@ -285,22 +164,22 @@ namespace DIMEN
                 ClearBackground(Color.RayWhite);
                 BeginMode3D(dimensionCamera.Camera);
                 Shaders.DrawSkybox(skyBox);
+
                 Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
                 keyModel.Transform = rotationMatrix;
 
                 DrawPlane(planePosition, planeSize, Color.DarkGray);
-
                 DrawModel(player1.Model, player1.Position, 1, Color.White);
-                DrawModel(obstacle1.ObstacleModel, obstaclePosition, 1, Color.White);
+                DrawModel(obstacle1.Model, obstaclePosition, 1, Color.White);
 
-                if (playerHasKey)
+                if (player1.HasKey)
                 {
                     // Vérification de la collision uniquement si la porte n'est pas déjà ouverte
                     if (!obstacle1.IsDoorOpen && CheckCollisionBoxes(player1.Box, obstacle1.DoorBox))
                     {
-                        isDoorOpen = true;
+                        obstacle1.IsDoorOpen = true;
                     }
-                    if (isDoorOpen && !isTopView)
+                    if (obstacle1.IsDoorOpen && !isTopView)
                     {
                         DrawModel(obstacle1.OpenDoorModel, obstacle1.DoorPosition, 1, Color.White);
                     }
@@ -328,10 +207,8 @@ namespace DIMEN
                 EndMode3D();
                 // Dessin de la barre de progression
                 DrawRectangle(10, 10, 200, 25, Color.LightGray);
-                DrawRectangle(10, 10, (int)(200 * progress), 25, Color.Green);
+                DrawRectangle(10, 10, (int)(200 * cooldown.Progress), 25, Color.Green);
                 DrawRectangleLines(10, 10, 200, 25, Color.Black);
-
-
                 EndDrawing();
             }
             static unsafe void InitModels(Model model, PBRMaterial material)

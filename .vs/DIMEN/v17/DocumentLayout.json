@@ -3,12 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\leones1\\Desktop\\DIMEN\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{7A2B3229-5CEA-49C0-8AAF-6C56649BEF12}|DIMEN\\DIMEN.csproj|c:\\users\\leones1\\desktop\\dimen\\dimen\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7A2B3229-5CEA-49C0-8AAF-6C56649BEF12}|DIMEN\\DIMEN.csproj|solutionrelative:dimen\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7A2B3229-5CEA-49C0-8AAF-6C56649BEF12}|DIMEN\\DIMEN.csproj|c:\\users\\leones1\\desktop\\dimen\\dimen\\dimen.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
-      "RelativeMoniker": "D:0:0:{7A2B3229-5CEA-49C0-8AAF-6C56649BEF12}|DIMEN\\DIMEN.csproj|solutionrelative:dimen\\dimen.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+      "AbsoluteMoniker": "D:0:0:{7A2B3229-5CEA-49C0-8AAF-6C56649BEF12}|DIMEN\\DIMEN.csproj|c:\\users\\leones1\\desktop\\dimen\\dimen\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7A2B3229-5CEA-49C0-8AAF-6C56649BEF12}|DIMEN\\DIMEN.csproj|solutionrelative:dimen\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,31 +14,19 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "DIMEN",
-              "DocumentMoniker": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\DIMEN.csproj",
-              "RelativeDocumentMoniker": "DIMEN\\DIMEN.csproj",
-              "ToolTip": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\DIMEN.csproj",
-              "RelativeToolTip": "DIMEN\\DIMEN.csproj",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-01-28T12:55:24.004Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\Program.cs",
-              "RelativeDocumentMoniker": "DIMEN\\Program.cs",
-              "ToolTip": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\Program.cs",
-              "RelativeToolTip": "DIMEN\\Program.cs",
-              "ViewState": "AQIAAF8AAAAAAAAAAAAWwG8AAAA0AAAA",
+              "Title": "Player.cs",
+              "DocumentMoniker": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\Player.cs",
+              "RelativeDocumentMoniker": "DIMEN\\Player.cs",
+              "ToolTip": "C:\\Users\\leones1\\Desktop\\DIMEN\\DIMEN\\Player.cs",
+              "RelativeToolTip": "DIMEN\\Player.cs",
+              "ViewState": "AQIAAFMAAAAAAAAAAAAAAGUAAAAQAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-28T11:50:16.203Z",
+              "WhenOpened": "2025-03-04T10:22:08.316Z",
               "EditorCaption": ""
             }
           ]

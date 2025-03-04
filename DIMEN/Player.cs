@@ -15,59 +15,85 @@ namespace DIMEN
         public float Friction { get; private set; }
         public bool HasKey;
         public float GroundLevel { get; private set; }
+        public bool IsFalling;
+        public float Speed;
 
         public Player(string playerMaterialPath, string playerModelPath, Vector3 playerDimensions, float groundLevel)
         {
             Material = new PBRMaterial (playerMaterialPath);
             Model = LoadModel(playerModelPath);
-
             InitModels(Model, Material);
 
             Dimensions = playerDimensions;
             Position = new Vector3 (-10, groundLevel,0);
             Box = new BoundingBox(Position + Dimensions/2, Position + Dimensions/2);
-            GroundLevel = groundLevel;
+            GroundLevel = groundLevel + 0.5f;
             Velocity = Vector3.Zero;
             Friction = 0.15f;
+            IsFalling = false;
+            Speed = 5.0f;
 }
         public void Update(Vector3 moveDirection, Vector3 strafeDirection, float deltaTime)
         {
             float gravity = -9.81f;
-            // Touches de déplacement
-            if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) MovePlayerUp(moveDirection);
-            if (IsKeyDown(KeyboardKey.S) || IsKeyDown(KeyboardKey.Down)) MovePlayerDown(moveDirection);
-            if (IsKeyDown(KeyboardKey.D) || IsKeyDown(KeyboardKey.Left)) MovePlayerLeft(strafeDirection);
-            if (IsKeyDown(KeyboardKey.A) || IsKeyDown(KeyboardKey.Right)) MovePlayerRight(strafeDirection);
 
-            // Freiner le joueur s'il relâche les touches de déplacement
-            if (IsKeyUp(KeyboardKey.W) && IsKeyUp(KeyboardKey.S) && IsKeyUp(KeyboardKey.A) && IsKeyUp(KeyboardKey.D)) Brake();
-
-            // Appliquer les mouvements horizontaux (X, Z) indépendamment de la gravité
-            Position.X += Velocity.X;
-            Position.Z += Velocity.Z;
-
-            if (Velocity.Y > gravity)
+            if (Position.Y > GroundLevel)
             {
-                Velocity.Y = gravity;
-            }
-            // Appliquer la gravité uniquement si le joueur n'est pas sur le sol
-            if (Position.Y > GroundLevel + 0.5f)
-            {
-                Velocity.Y += gravity * deltaTime;  // Applique la gravité uniquement en l'air
+                Velocity.Y += gravity * deltaTime; // Accumulation progressive de la vitesse de chute
             }
             else
             {
-                Velocity.Y = 0f;  // Réinitialise la vitesse verticale quand il touche le sol
-                Position.Y = GroundLevel + 0.5f;  // Maintien le joueur sur le sol
+                Velocity.Y = 0f; // Arrêter la chute
+                Position.Y = GroundLevel; // Ajuster la position pour coller au sol
             }
 
+            if (Velocity.Y < gravity)
+            {
+                Velocity.Y = gravity;
+            }
 
-            Position += Raymath.Vector3Normalize(Velocity) / 10;
+            // Gestion des déplacements
+            Vector3 movement = Vector3.Zero;
+
+            if (IsKeyDown(KeyboardKey.W)) movement += moveDirection;
+            if (IsKeyDown(KeyboardKey.S)) movement -= moveDirection;
+            if (IsKeyDown(KeyboardKey.A)) movement += strafeDirection;
+            if (IsKeyDown(KeyboardKey.D)) movement -= strafeDirection;
+
+            // Normalisation pour éviter un déplacement plus rapide en diagonale
+            if (movement != Vector3.Zero)
+            {
+                movement = Raymath.Vector3Normalize(movement) * Speed;
+                Velocity.X = movement.X;
+                Velocity.Z = movement.Z;
+            }
+            else
+            {
+                Brake(); // Applique un freinage progressif quand aucune touche n'est pressée
+            }
+
+            // Mise à jour de la position avec deltaTime pour une physique plus fluide
+            Position += Velocity * deltaTime;
+
+            // Mise à jour de la hitbox
             Box = new BoundingBox(
-                    new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f),
-                    new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f)
+                new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f),
+                new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f)
             );
         }
+
+        private void Brake()
+        {
+            float deceleration = 0.9f; // Freinage plus naturel
+            Velocity.X *= deceleration;
+            Velocity.Z *= deceleration;
+
+            // Éviter les valeurs proches de zéro qui pourraient causer un mouvement résiduel
+            if (Math.Abs(Velocity.X) < 0.01f) Velocity.X = 0f;
+            if (Math.Abs(Velocity.Z) < 0.01f) Velocity.Z = 0f;
+            
+        }
+
         public void HandleCollision(Obstacle obstacle, bool isTopView)
         {
             if (CheckCollisionBoxes(Box, obstacle.Box) && !isTopView)
@@ -105,41 +131,6 @@ namespace DIMEN
                 }
             }
         }
-        public Vector3 LimitSpeed()
-        {
-            float speed = 0.01f;
-            if (Velocity.Length() > speed)
-            {
-                return Velocity = Vector3.Normalize(Velocity) * speed;
-            }
-            return Velocity;
-        }
-        public Vector3 Brake()
-        {
-            float deceleration = 0.65f;
-            Velocity *= deceleration; // Ralentissement progressif
-            if (Velocity.Length() < 0.01f)
-            {
-                return Velocity = Vector3.Zero; // Éviter une vitesse résiduelle
-            }
-            return Velocity;
-        }
-        public Vector3 MovePlayerUp(Vector3 moveDirection)
-        {
-            return Position += moveDirection * Friction;
-        }
-        public Vector3 MovePlayerDown(Vector3 moveDirection)
-        {
-            return Position -= moveDirection * Friction;
-        }
-        public Vector3 MovePlayerLeft(Vector3 strafeDirection)
-        {
-            return Position -= strafeDirection * Friction;
-        }
-        public Vector3 MovePlayerRight(Vector3 strafeDirection)
-        {
-            return Position += strafeDirection * Friction;
-        }
         public unsafe void InitModels(Model model, PBRMaterial material)
         {
             for (int i = 0; i < model.MeshCount; i++)
@@ -151,5 +142,6 @@ namespace DIMEN
                 model.Materials[0] = material.Material;
             }
         }
+
     }
 }

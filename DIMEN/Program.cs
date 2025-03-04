@@ -53,18 +53,20 @@ namespace DIMEN
             Vector3 obstaclePosition = new Vector3(0, 0, 0);
             Vector3 doorDimensions = new Vector3(1.4f, 2.5f, 0.5f);
             Vector3 colliderObstacleDimension = obstacleDimensions / 2;
-            
+
             Obstacle obstacle1 = new(
-                "assets/textures/default/",
-                "assets/textures/metal/door/",
-                "assets/objects/Obstacle.obj",
-                obstacleDimensions,
-                obstaclePosition,
-                doorDimensions,
-                "assets/objects/opendoor.obj",
-                "assets/objects/closeddoor.obj",
-                groundLevel
-            );
+               "assets/textures/default/",
+               "assets/textures/metal/door/",
+               "assets/objects/Obstacle.obj",
+               obstacleDimensions,
+               obstaclePosition,
+               doorDimensions,
+               "assets/objects/opendoor.obj",
+               "assets/objects/closeddoor.obj",
+               groundLevel
+           );
+
+            List<Obstacle> obstacles = [obstacle1];
  
             Vector3 playerDimensions = new Vector3(1);
             Player player1 = new(
@@ -78,6 +80,7 @@ namespace DIMEN
             {
                 Shaders.UpdatePBRLighting(dimensionCamera.Camera.Position);
                 float deltaTime = GetFrameTime();
+
                 keyRotationAngle++;
                 keyPosition.Y = obstaclePosition.Y + colliderObstacleDimension.Y + 1f;
                 BoundingBox keyBox = new BoundingBox(keyPosition - (keyDimensions / 2), keyPosition + (keyDimensions / 2));
@@ -102,8 +105,8 @@ namespace DIMEN
                 {
                     player1.HasKey = true;
                 }
+
                 player1.Update(moveDirection, strafeDirection, deltaTime);
-                player1.LimitSpeed();
                 player1.HandleCollision(obstacle1, isTopView);
                                
                 // Changer de mode de vue (vue de dessus ou perspective)
@@ -111,7 +114,6 @@ namespace DIMEN
                 {
                     if (isTopView)
                     {
-                        // Si la vue est déjà activée, désactive-la immédiatement
                         isTopView = false;
                         cooldown.Progress = 0.0f;
                         cooldown.Filling = true; // Recommence le remplissage
@@ -149,7 +151,7 @@ namespace DIMEN
                     cooldown.Timer += deltaTime;
                     if (cooldown.Timer >= cooldown.Duration)
                     {
-                        isTopView = false; // Désactiver la vue de dessus après topViewDuration
+                        isTopView = false;
                         cooldown.Filling = true; // Démarrer le remplissage après la désactivation
                     }
                     dimensionCamera.TopViewPosition();
@@ -191,20 +193,18 @@ namespace DIMEN
                 else
                 {
                     DrawModel(keyModel, keyPosition, 1, Color.White);
-                    //DrawBoundingBox(keyBox, Color.Yellow);
                     DrawModel(obstacle1.ClosedDoorModel, obstacle1.DoorPosition, 1, Color.White);  // Affiche la porte fermée si le joueur n'a pas la clé
                 }
 
                 DrawSphere(Shaders.Light1.Position, 1.0f, Color.White);
-                //DrawSphere(Shaders.Light2.Position, 1.0f, Color.White);
-                //DrawSphere(Shaders.Light3.Position, 1.0f, Color.White);
-                //DrawSphere(Shaders.Light4.Position, 1.0f, Color.White);
-
-                //DrawBoundingBox(playerBox, Color.Blue);
-                //DrawBoundingBox(obstacleBox, Color.Red);
-                //DrawBoundingBox(doorBox, Color.Green);
+                DrawSphere(Shaders.Light2.Position, 1.0f, Color.White);
+                DrawSphere(Shaders.Light3.Position, 1.0f, Color.White);
+                DrawSphere(Shaders.Light4.Position, 1.0f, Color.White);
 
                 EndMode3D();
+
+                DrawText(player1.Velocity.ToString(), 40, 40, 30, Color.Black);
+
                 // Dessin de la barre de progression
                 DrawRectangle(10, 10, 200, 25, Color.LightGray);
                 DrawRectangle(10, 10, (int)(200 * cooldown.Progress), 25, Color.Green);
@@ -222,6 +222,7 @@ namespace DIMEN
                     model.Materials[0] = material.Material;
                 }
             }
+
             // Déchargement des ressources
             CloseWindow();
         }

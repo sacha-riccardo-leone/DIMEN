@@ -94,42 +94,46 @@ namespace DIMEN
             
         }
 
-        public void HandleCollision(Obstacle obstacle, bool isTopView)
+        public void HandleCollision(List <Obstacle> obstacles, bool isTopView)
         {
-            if (CheckCollisionBoxes(Box, obstacle.Box) && !isTopView)
+            foreach(Obstacle obstacle in obstacles)
             {
-                float deltaX = Position.X - obstacle.Position.X;
-                float deltaZ = Position.Z - obstacle.Position.Z;
-                float deltaY = Position.Y - obstacle.Position.Y;
+                if (CheckCollisionBoxes(Box, obstacle.Box) && !isTopView)
+                {
+                    float deltaX = Position.X - obstacle.Position.X;
+                    float deltaZ = Position.Z - obstacle.Position.Z;
+                    float deltaY = Position.Y - obstacle.Position.Y;
 
-                float overlapX = Dimensions.X / 2 + obstacle.Dimensions.X / 2 - Math.Abs(deltaX);
-                float overlapZ = Dimensions.Z / 2 + obstacle.Dimensions.Z / 2 - Math.Abs(deltaZ);
-                float overlapY = Dimensions.Y / 2 + obstacle.Dimensions.Y / 2 - Math.Abs(deltaY);
+                    float overlapX = Dimensions.X / 2 + obstacle.Dimensions.X / 2 - Math.Abs(deltaX);
+                    float overlapZ = Dimensions.Z / 2 + obstacle.Dimensions.Z / 2 - Math.Abs(deltaZ);
+                    float overlapY = Dimensions.Y / 2 + obstacle.Dimensions.Y / 2 - Math.Abs(deltaY);
 
-                if (overlapX < overlapZ && overlapX < overlapY)
-                {
-                    Position.X += deltaX > 0 ? overlapX : -overlapX;
+                    if (overlapX < overlapZ && overlapX < overlapY)
+                    {
+                        Position.X += deltaX > 0 ? overlapX : -overlapX;
+                    }
+                    else if (overlapZ < overlapX && overlapZ < overlapY)
+                    {
+                        Position.Z += deltaZ > 0 ? overlapZ : -overlapZ;
+                    }
+                    else
+                    {
+                        Position.Y += deltaY > 0 ? overlapY - 0.01f : -overlapY + 0.01f;
+                    }
                 }
-                else if (overlapZ < overlapX && overlapZ < overlapY)
+                if (isTopView)
                 {
-                    Position.Z += deltaZ > 0 ? overlapZ : -overlapZ;
-                }
-                else
-                {
-                    Position.Y += deltaY > 0 ? overlapY - 0.01f : -overlapY + 0.01f;
+                    if (CheckCollisionBoxes(Box, obstacle.Box))
+                    {
+                        Position.Y = obstacle.Position.Y + obstacle.Dimensions.Y / 2;
+                    }
+                    else
+                    {
+                        Position.Y = GroundLevel;
+                    }
                 }
             }
-            if (isTopView)
-            {
-                if (CheckCollisionBoxes(Box, obstacle.Box))
-                {
-                    Position.Y = obstacle.Position.Y + obstacle.Dimensions.Y/2;
-                }
-                else
-                {
-                    Position.Y = GroundLevel;
-                }
-            }
+            
         }
         public unsafe void InitModels(Model model, PBRMaterial material)
         {

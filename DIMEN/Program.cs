@@ -9,24 +9,110 @@ namespace DIMEN
 {
     public class Program
     {
+        enum GameState { Menu, Playing, Settings, Exit }
+        static GameState currentState = GameState.Menu;  // On commence dans le menu
+        static int screenWidth = 1920;
+        static int screenHeight = 1080;
 
-        public static unsafe void Main(string[] args)
+        static void Main()
         {
+            InitWindow(screenWidth, screenHeight, "Menu de démarrage - Raylib");
+            SetTargetFPS(60);
+
+            while (!WindowShouldClose() && currentState != GameState.Exit)
+            {
+                switch (currentState)
+                {
+                    case GameState.Menu:
+                        MenuScreen();  // Affichage du menu
+                        break;
+                    case GameState.Playing:
+                        GameScreen();  // Jeu en cours
+                        break;
+                    case GameState.Settings:
+                        SettingsScreen();
+                        break;
+                }
+            }
+            CloseWindow();
+        }
+        static void MenuScreen()
+        {
+            BeginDrawing();
+            ClearBackground(Color.Gray);
+
+            // Texte centré pour le menu
+            string title = "DIMEN";
+            string option1 = "1. Jouer";
+            string option2 = "2. Assignations des touches";
+            string option3 = "3. Quitter";
+
+            int titleSize = 40;
+            int optionSize = 30;
+
+            int titleX = (screenWidth - MeasureText(title, titleSize)) / 2;
+            int option1X = (screenWidth - MeasureText(option1, optionSize)) / 2;
+            int option2X = (screenWidth - MeasureText(option2, optionSize)) / 2;
+            int option3X = (screenWidth - MeasureText(option3, optionSize)) / 2;
+
+            // Affichage du menu
+            DrawText(title, titleX, 300, titleSize, Color.White);
+            DrawText(option1, option1X, 450, optionSize, Color.LightGray);
+            DrawText(option2, option2X, 500, optionSize, Color.LightGray);
+            DrawText(option3, option3X, 550, optionSize, Color.LightGray);
+
+            // Vérification de l'entrée utilisateur
+            if (IsKeyPressed(KeyboardKey.One))
+            {
+                currentState = GameState.Playing;  // Passage à l'écran de jeu
+            }
+            if (IsKeyPressed(KeyboardKey.Two))
+            {
+                currentState = GameState.Settings;  // Sortie de l'application
+            }
+            if (IsKeyPressed(KeyboardKey.Three))
+            {
+                currentState = GameState.Exit;  // Sortie de l'application
+            }
+
+            EndDrawing();
+        }
+        static void SettingsScreen()
+        {
+            BeginDrawing();
+            ClearBackground(Color.Gray);
+
+            string text1 = "Touches de déplacement :\n\nW : Haut\n\nA : Gauche\n\nS : Bas\n\nD : Droite\n\n\nTouches dimentionnelles :\n\nE : Rotation caméra\n\nQ : Mode plan";
+            string text2 = "Retour : <-";
+            
+            DrawText(text1, 100, 150, 20, Color.White);
+            DrawText(text2, 50, 50, 20, Color.White);
+
+            // Vérification de l'entrée utilisateur
+            if (IsKeyPressed(KeyboardKey.Left))
+            {
+                currentState = GameState.Menu;
+            }
+
+            EndDrawing();
+        }
+        public static unsafe void GameScreen()
+        {
+
             // Initialisation
-            InitWindow(1600, 900, "Raylib 3D in C#");
+            InitWindow(screenWidth, screenHeight, "Raylib 3D in C#");
             SetTargetFPS(60);
             DisableCursor();
 
             Shaders.Init();
-            
-            PBRMaterial defaultMaterial = new PBRMaterial("assets/textures/default/");
+
             PBRMaterial KeyMaterial = new PBRMaterial("assets/textures/key/");
             Model keyModel = LoadModel("assets/objects/Old_Key.obj");
-            Material skyBox = Shaders.LoadSkybox("assets/skybox/skybox.hdr"); 
+            Material skyBox = Shaders.LoadSkybox("assets/skybox/skybox.hdr");
             InitModels(keyModel, KeyMaterial);
 
             Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
-            Vector2 planeSize = new Vector2(300, 300);
+            Vector2 planeSize = new Vector2(1000, 1000);
 
             // Variables pour la gestion du mouvement et de la rotation
             float targetRotationAngle = 0f;
@@ -48,26 +134,31 @@ namespace DIMEN
             Cooldown cooldown = new Cooldown(5.0f);
 
             DimensionCamera dimensionCamera = new DimensionCamera();
-
-            Vector3 obstacleDimensions = new Vector3(16);
-            Vector3 obstaclePosition = new Vector3(0, 0, 0);
             Vector3 doorDimensions = new Vector3(1.4f, 2.5f, 0.5f);
-            Vector3 colliderObstacleDimension = obstacleDimensions / 2;
+            Vector3 colliderObstacleDimension = new Vector3(16) / 2;
 
             Obstacle obstacle1 = new(
                "assets/textures/default/",
                "assets/textures/metal/door/",
                "assets/objects/Obstacle.obj",
-               obstacleDimensions,
-               obstaclePosition,
+               new Vector3(16),
+               new Vector3(0),
                doorDimensions,
                "assets/objects/opendoor.obj",
                "assets/objects/closeddoor.obj",
                groundLevel
            );
 
-            List<Obstacle> obstacles = [obstacle1];
- 
+            Obstacle obstacle2 = new(
+               "assets/textures/default/",
+               "assets/objects/Obstacle.obj",
+               new Vector3(8),
+               new Vector3(20, 0, 20),
+               groundLevel
+           );
+
+            List<Obstacle> obstacles = [obstacle1, obstacle2];
+
             Vector3 playerDimensions = new Vector3(1);
             Player player1 = new(
                 "assets/textures/default/",
@@ -78,11 +169,12 @@ namespace DIMEN
 
             while (!WindowShouldClose())
             {
+
                 Shaders.UpdatePBRLighting(dimensionCamera.Camera.Position);
                 float deltaTime = GetFrameTime();
 
                 keyRotationAngle++;
-                keyPosition.Y = obstaclePosition.Y + colliderObstacleDimension.Y + 1f;
+                keyPosition.Y = obstacle1.Position.Y + colliderObstacleDimension.Y + 1f;
                 BoundingBox keyBox = new BoundingBox(keyPosition - (keyDimensions / 2), keyPosition + (keyDimensions / 2));
 
                 if (IsKeyPressed(KeyboardKey.E) && !isTopView)
@@ -107,8 +199,8 @@ namespace DIMEN
                 }
 
                 player1.Update(moveDirection, strafeDirection, deltaTime);
-                player1.HandleCollision(obstacle1, isTopView);
-                               
+                player1.HandleCollision(obstacles, isTopView);
+
                 // Changer de mode de vue (vue de dessus ou perspective)
                 if (IsKeyPressed(KeyboardKey.Q))
                 {
@@ -157,7 +249,7 @@ namespace DIMEN
                     dimensionCamera.TopViewPosition();
                 }
                 else
-                {              
+                {
                     dimensionCamera.DefaultPosition();
                 }
 
@@ -172,7 +264,8 @@ namespace DIMEN
 
                 DrawPlane(planePosition, planeSize, Color.DarkGray);
                 DrawModel(player1.Model, player1.Position, 1, Color.White);
-                DrawModel(obstacle1.Model, obstaclePosition, 1, Color.White);
+                DrawModel(obstacle1.Model, obstacle1.Position, 1, Color.White);
+                DrawModelEx(obstacle2.Model, obstacle2.Position, Vector3.Zero, 0, new Vector3(0f), Color.White);
 
                 if (player1.HasKey)
                 {
@@ -187,7 +280,7 @@ namespace DIMEN
                     }
                     else
                     {
-                        DrawModel(obstacle1.ClosedDoorModel, obstacle1.DoorPosition, 1, Color.White); 
+                        DrawModel(obstacle1.ClosedDoorModel, obstacle1.DoorPosition, 1, Color.White);
                     }
                 }
                 else
@@ -201,14 +294,20 @@ namespace DIMEN
                 DrawSphere(Shaders.Light3.Position, 1.0f, Color.White);
                 DrawSphere(Shaders.Light4.Position, 1.0f, Color.White);
 
+                foreach (Obstacle obstacle in obstacles)
+                {
+                    DrawBoundingBox(obstacle.Box, Color.Red);
+                }
+                DrawBoundingBox(player1.Box, Color.Blue);
+
                 EndMode3D();
 
-                DrawText(player1.Velocity.ToString(), 40, 40, 30, Color.Black);
+                
 
                 // Dessin de la barre de progression
-                DrawRectangle(10, 10, 200, 25, Color.LightGray);
-                DrawRectangle(10, 10, (int)(200 * cooldown.Progress), 25, Color.Green);
-                DrawRectangleLines(10, 10, 200, 25, Color.Black);
+                DrawRectangle(30, 30, 200, 25, Color.LightGray);
+                DrawRectangle(30, 30, (int)(200 * cooldown.Progress), 25, Color.Green);
+                DrawRectangleLines(30, 30, 200, 25, Color.Black);
                 EndDrawing();
             }
             static unsafe void InitModels(Model model, PBRMaterial material)
@@ -226,5 +325,8 @@ namespace DIMEN
             // Déchargement des ressources
             CloseWindow();
         }
+
     }
+
+
 }

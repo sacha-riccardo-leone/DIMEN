@@ -50,10 +50,10 @@ namespace DIMEN
         }
 
 
-        public Obstacle(PBRMaterial material, Model model, Vector3 dimensions, Vector3 position, float groundLevel)
+        public Obstacle(string obstacleMaterialPath, string obstacleModelPath, Vector3 dimensions, Vector3 position, float groundLevel)
         {
-            Material = material;
-            Model = model;
+            Material = new PBRMaterial(obstacleMaterialPath);
+            Model = LoadModel(obstacleModelPath);
             Dimensions = dimensions;
             Position = position;
             GroundLevel = groundLevel;

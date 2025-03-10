@@ -80,6 +80,7 @@ namespace DIMEN
                 new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f),
                 new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f)
             );
+
         }
 
         private void Brake()
@@ -94,10 +95,12 @@ namespace DIMEN
             
         }
 
-        public void HandleCollision(Obstacle obstacle, bool isTopView)
+        public void HandleCollision(List <Obstacle> obstacles, bool isTopView)
         {
-            //foreach(Obstacle obstacle in obstacles)
-            //{
+            
+
+            foreach (Obstacle obstacle in obstacles)
+            {
                 if (CheckCollisionBoxes(Box, obstacle.Box) && !isTopView)
                 {
                     float deltaX = Position.X - obstacle.Position.X;
@@ -132,8 +135,8 @@ namespace DIMEN
                         Position.Y = GroundLevel;
                     }
                 }
-            //}
-            
+            }
+
         }
         public unsafe void InitModels(Model model, PBRMaterial material)
         {

@@ -85,8 +85,6 @@ namespace DIMEN
                 Position + HalfSize
             );
         }
-
-
         public void ToggleDoor()
         {
             IsDoorOpen = !IsDoorOpen;

@@ -158,9 +158,6 @@ namespace DIMEN
             Vector3 planePosition = new Vector3(0, GRIDLEVEL, 0);
             Vector3 keyPosition = new Vector3(0);
 
-            // Variables pour la vue plan et le cooldown
-            bool isTopView = false;
-
             Cooldown cooldown = new Cooldown(5.0f);
 
             DimensionCamera dimensionCamera = new DimensionCamera();
@@ -229,7 +226,7 @@ namespace DIMEN
                 keyPosition.Y = obstacle1.Position.Y + colliderObstacleDimension.Y + 1f;
                 BoundingBox keyBox = new BoundingBox(keyPosition - (keyDimensions / 2), keyPosition + (keyDimensions / 2));
 
-                if (IsKeyPressed(KeyboardKey.E) && !isTopView)
+                if (IsKeyPressed(KeyboardKey.E) && !cooldown.IsTopView)
                 {
                     targetRotationAngle += 90f;
                 }
@@ -251,66 +248,22 @@ namespace DIMEN
                 }
 
                 player1.Update(moveDirection, strafeDirection, deltaTime);
-                player1.HandleCollision(obstacle1, isTopView);
 
+                player1.HandleCollision(obstacles, cooldown.IsTopView);
 
-                // Changer de mode de vue (vue de dessus ou perspective)
+                // Dans la boucle principale
                 if (IsKeyPressed(KeyboardKey.Q))
                 {
-                    if (isTopView)
-                    {
-                        // Si en vue de dessus et qu'on appuie sur Q, désactive la vue de dessus
-                        isTopView = false;
-                        cooldown.Progress = 0.0f;  // Réinitialise la barre
-                        cooldown.Filling = true;   // Commence à remplir la barre
-                    }
-                    else if (cooldown.Progress >= 1.0f) // Si la barre est remplie, active la vue de dessus
-                    {
-                        isTopView = true;
-                        cooldown.TotalCooldown = 0.0f;  // Réinitialise le cooldown
-                        cooldown.Filling = false;  // Commence à vider la barre
-                    }
+                    cooldown.ToggleView();
                 }
 
-                // Gestion du remplissage ou vidage de la barre de progression
-                if (isTopView)
-                {
-                    // Si en vue de dessus, on vide la barre
-                    cooldown.Progress -= deltaTime / cooldown.Duration;
-                    if (cooldown.Progress <= 0.0f)
-                    {
-                        cooldown.Progress = 0.0f;
-                        cooldown.Filling = true; // La barre recommence à se remplir après la désactivation
-                    }
-                }
-                else if (cooldown.Filling)
-                {
-                    // Si la barre est en train de se remplir
-                    cooldown.Progress += deltaTime / cooldown.Duration;
-                    if (cooldown.Progress >= 1.0f)
-                    {
-                        cooldown.Progress = 1.0f;
-                        cooldown.Filling = false; // La barre est complètement remplie
-                    }
-                }
+                cooldown.Update(deltaTime);
 
-                // Gestion du timer en vue de dessus
-                if (isTopView)
-                {
-                    cooldown.Timer += deltaTime;
-                    if (cooldown.Timer >= cooldown.Duration)
-                    {
-                        isTopView = false;  // Désactive la vue de dessus après le temps écoulé
-                        cooldown.Filling = true;  // Démarre le remplissage pour pouvoir réactiver la vue de dessus
-                    }
+                // Appliquer la position de la caméra en fonction de l'état
+                if (cooldown.IsTopView)
                     dimensionCamera.TopViewPosition();
-                }
                 else
-                {
                     dimensionCamera.DefaultPosition();
-                }
-
-
 
                 // Dessin de la scène
                 BeginDrawing();
@@ -332,7 +285,7 @@ namespace DIMEN
                     {
                         obstacle1.IsDoorOpen = true;
                     }
-                    if (obstacle1.IsDoorOpen && !isTopView)
+                    if (obstacle1.IsDoorOpen && !cooldown.IsTopView)
                     {
                         DrawModel(obstacle1.OpenDoorModel, obstacle1.DoorPosition, 1, Color.White);
                     }
@@ -363,6 +316,9 @@ namespace DIMEN
                 DrawRectangle(30, 30, 200, 25, Color.LightGray);
                 DrawRectangle(30, 30, (int)(200 * cooldown.Progress), 25, Color.Green);
                 DrawRectangleLines(30, 30, 200, 25, Color.Black);
+
+                DrawText(cooldown.IsTopView.ToString(), 120, 120, 20, Color.Black);
+
                 EndDrawing();
             }
             static unsafe void InitModels(Model model, PBRMaterial material)

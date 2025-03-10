@@ -4,6 +4,7 @@ using System.Numerics;
 using System;
 using System.Diagnostics;
 using System.Reflection;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace DIMEN
 {
@@ -11,52 +12,69 @@ namespace DIMEN
     {
         enum GameState { Menu, Playing, Settings, Exit }
         static GameState currentState = GameState.Menu;  // On commence dans le menu
-        static int screenWidth = 1920;
-        static int screenHeight = 1050;
+        static int screenWidth = 1800;
+        static int screenHeight = 900;
+
 
         static void Main()
         {
-            InitWindow(screenWidth, screenHeight, "Menu de démarrage - Raylib");
+            // Crée une seule fenêtre
+            InitWindow(screenWidth, screenHeight, "DIMEN - Menu");
             SetTargetFPS(60);
 
+            // Boucle principale
             while (!WindowShouldClose() && currentState != GameState.Exit)
             {
-                switch (currentState)
-                {
-                    case GameState.Menu:
-                        MenuScreen();  // Affichage du menu
-                        break;
-                    case GameState.Playing:
-                        GameScreen();  // Jeu en cours
-                        break;
-                    case GameState.Settings:
-                        SettingsScreen();
-                        break;
-                }
+                // Gère les transitions d'état
+                HandleState();
+            }
+
+        }
+
+        // Cette méthode gère les états du jeu (Menu, Jeu, Paramètres, etc.)
+        static void HandleState()
+        {
+            switch (currentState)
+            {
+                case GameState.Menu:
+                    MenuScreen();
+                    break;
+                case GameState.Playing:
+                    GameScreen();
+                    break;
+                case GameState.Settings:
+                    SettingsScreen();
+                    break;
+                case GameState.Exit:
+                    break;
             }
         }
+
         static void MenuScreen()
         {
             BeginDrawing();
             ClearBackground(Color.Gray);
 
             // Définition des textes
-            string title = "DIMEN";
+            string title = "dimen";
             string option1 = "Jouer";
             string option2 = "Assignations des touches";
             string option3 = "Quitter";
 
-            int titleSize = 40;
+            int titleSize = 80;
             int optionSize = 30;
 
-            int titleX = (screenWidth - MeasureText(title, titleSize)) / 2;
-            int option1X = (screenWidth - MeasureText(option1, optionSize)) / 2;
-            int option2X = (screenWidth - MeasureText(option2, optionSize)) / 2;
+            int titleX = (screenWidth - MeasureText(title, titleSize)) / 2 - 25;
+            int option1X = (screenWidth - MeasureText(option1, optionSize)) / 2 + 5;
+            int option2X = (screenWidth - MeasureText(option2, optionSize)) / 2 - 30;
             int option3X = (screenWidth - MeasureText(option3, optionSize)) / 2;
 
             int option1Y = 450;
             int option2Y = 500;
             int option3Y = 550;
+
+            Font hexagonFont = LoadFontEx("assets/ui_ux/fonts/HEXAGON_.TTF", titleSize, null, 0);
+            Font upheavttFont = LoadFontEx("assets/ui_ux/fonts/upheavtt.ttf", optionSize, null, 0);
 
             // Position de la souris
             Vector2 mousePos = GetMousePosition();
@@ -72,15 +90,10 @@ namespace DIMEN
                           mousePos.Y >= option3Y && mousePos.Y <= option3Y + optionSize;
 
             // Affichage du menu avec effet de surbrillance
-            DrawText(title, titleX, 300, titleSize, Color.White);
-            DrawText(option1, option1X, option1Y, optionSize, hover1 ? Color.White : Color.LightGray);
-            DrawText(option2, option2X, option2Y, optionSize, hover2 ? Color.White : Color.LightGray);
-            DrawText(option3, option3X, option3Y, optionSize, hover3 ? Color.White : Color.LightGray);
-
-            // Dessin des contours des zones cliquables en rouge
-            DrawRectangleLines(option1X, option1Y, MeasureText(option1, optionSize), optionSize, Color.Red);
-            DrawRectangleLines(option2X, option2Y, MeasureText(option2, optionSize), optionSize, Color.Red);
-            DrawRectangleLines(option3X, option3Y, MeasureText(option3, optionSize), optionSize, Color.Red);
+            DrawTextEx(hexagonFont, title, new Vector2(titleX, 300), titleSize, 2, Color.Black);
+            DrawTextEx(upheavttFont, option1, new Vector2(option1X, option1Y), optionSize, 2, hover1 ? Color.DarkGray : Color.Black);
+            DrawTextEx(upheavttFont, option2, new Vector2(option2X, option2Y), optionSize, 2, hover2 ? Color.DarkGray : Color.Black);
+            DrawTextEx(upheavttFont, option3, new Vector2(option3X, option3Y), optionSize, 2, hover3 ? Color.DarkGray : Color.Black);
 
             // Détection des clics sur les options
             if (IsMouseButtonPressed(MouseButton.Left))
@@ -92,29 +105,34 @@ namespace DIMEN
 
             EndDrawing();
         }
-
         static void SettingsScreen()
         {
             BeginDrawing();
             ClearBackground(Color.Gray);
 
-            string text1 = "Touches de déplacement :\n\nW : Haut\n\nA : Gauche\n\nS : Bas\n\nD : Droite\n\n\nTouches dimensionnelles :\n\nE : Rotation caméra\n\nQ : Mode plan";
+            string text1 = "Touches de deplacement :\n\nW : Haut\n\nA : Gauche\n\nS : Bas\n\nD : Droite\n\n\nTouches dimensionnelles :\n\nE : Rotation camera\n\nQ : Mode plan";
             string text2 = "<- Retour";
 
+            int text1Size = 20;
             int text2Size = 20;
-            int text2X = 50;
+
+            int text1X = (screenWidth - MeasureText(text1, text1Size)) / 2;
+            int text2X = (screenWidth - MeasureText(text2, text2Size)) / 2;
+
+            int text1Y = 150;
             int text2Y = 50;
-            int text2Width = MeasureText(text2, text2Size);
+
+            Font upheavttFont = LoadFontEx("assets/ui_ux/fonts/upheavtt.ttf", text2Size, null, 0);
 
             Vector2 mousePos = GetMousePosition();
-            bool hoverBack = mousePos.X >= text2X && mousePos.X <= text2X + text2Width &&
+            bool hoverBack = mousePos.X >= text2X && mousePos.X <= text2X + MeasureText(text2, text2Size) &&
                              mousePos.Y >= text2Y && mousePos.Y <= text2Y + text2Size;
 
-            DrawText(text1, 100, 150, 20, Color.White);
-            DrawText(text2, text2X, text2Y, text2Size, hoverBack ? Color.Yellow : Color.White);
+            // Affichage du texte d'instruction
+            DrawTextEx(upheavttFont, text1, new Vector2(text1X, text1Y), text1Size, 2, Color.Black);
 
-            // Dessin des contours de la zone cliquable en rouge
-            DrawRectangleLines(text2X, text2Y, text2Width, text2Size, Color.Red);
+            // Affichage du deuxième texte avec la police upheavttFont et survol
+            DrawTextEx(upheavttFont, text2, new Vector2(text2X, text2Y), text2Size, 2, hoverBack ? Color.DarkGray : Color.Black);
 
             // Détection du clic sur "Retour"
             if (hoverBack && IsMouseButtonPressed(MouseButton.Left))
@@ -123,14 +141,16 @@ namespace DIMEN
             }
 
             EndDrawing();
+            if (IsKeyPressed(KeyboardKey.Escape))
+            {
+                currentState = GameState.Menu;
+            }
         }
-
-
         public static unsafe void GameScreen()
         {
 
             // Initialisation
-            InitWindow(screenWidth, screenHeight, "Raylib 3D in C#");
+            InitWindow(screenWidth, screenHeight, "DIMEN");
             SetTargetFPS(60);
             DisableCursor();
 
@@ -175,15 +195,6 @@ namespace DIMEN
                "assets/objects/closeddoor.obj",
                groundLevel
            );
-
-           // Obstacle obstacle1 = new(
-           //    "assets/textures/default/",
-           //    "assets/objects/Obstacle.obj",
-           //    new Vector3(16),
-           //    new Vector3(0),
-           //    groundLevel
-           //);
-
             Obstacle obstacle2 = new(
                "assets/textures/default/",
                "assets/objects/Obstacle.obj",
@@ -206,7 +217,8 @@ namespace DIMEN
                groundLevel
            );
 
-            List<Obstacle> obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
+            // Supposons que tu as une collection d'obstacles
+            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4 };
 
             Vector3 playerDimensions = new Vector3(1);
             Player player1 = new(
@@ -277,6 +289,11 @@ namespace DIMEN
                 DrawPlane(planePosition, planeSize, Color.DarkGray);
                 DrawModel(player1.Model, player1.Position, 1, Color.White);
 
+                foreach (Obstacle obstacle in obstacles)
+                {
+                    // Utiliser DrawModelEx pour appliquer l'échelle, la position, et potentiellement la rotation
+                    DrawModelEx(obstacle.Model, obstacle.Position, Vector3.One, 0f, obstacle.Scale, Color.White);
+                }
 
                 if (player1.HasKey)
                 {
@@ -312,14 +329,17 @@ namespace DIMEN
                 DrawBoundingBox(player1.Box, Color.Blue);
 
                 EndMode3D();
+
                 // Dessin de la barre de progression
                 DrawRectangle(30, 30, 200, 25, Color.LightGray);
                 DrawRectangle(30, 30, (int)(200 * cooldown.Progress), 25, Color.Green);
                 DrawRectangleLines(30, 30, 200, 25, Color.Black);
 
-                DrawText(cooldown.IsTopView.ToString(), 120, 120, 20, Color.Black);
-
                 EndDrawing();
+                if (IsKeyPressed(KeyboardKey.Escape))
+                {
+                    currentState = GameState.Menu;
+                }
             }
             static unsafe void InitModels(Model model, PBRMaterial material)
             {

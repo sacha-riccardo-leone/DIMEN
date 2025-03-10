@@ -1,7 +1,7 @@
 ﻿using Raylib_cs;
 using static Raylib_cs.Raylib;
 using System.Numerics;
-
+using static System.Formats.Asn1.AsnWriter;
 
 namespace DIMEN
 {
@@ -58,37 +58,66 @@ namespace DIMEN
 
             DoorBox = new BoundingBox(DoorPosition - DoorDimensions / 2, DoorPosition + DoorDimensions / 2);
 
+            // Calcul de la taille du modèle
             BoundingBox tempBox = GetModelBoundingBox(Model);
             Vector3 modelsize = tempBox.Max - tempBox.Min;
+
+            // Calcul du facteur d'échelle en fonction de la bounding box
             Vector3 boxSize = Box.Max - Box.Min;
             Vector3 scale = boxSize / modelsize;
 
+            // Appliquer l'échelle au modèle
             Scale = scale;
 
+            // Appliquer la mise à l'échelle sur le modèle
+            SetModelScale(Model, scale);
+            SetModelScale(OpenDoorModel, scale);
+            SetModelScale(ClosedDoorModel, scale);
         }
 
-        public Obstacle(string obstacleMaterialPath, string obstacleModelPath, Vector3 dimensions, Vector3 position, float groundLevel)
+        public Obstacle(string obstacleMaterialPath,string obstacleModelPath, Vector3 dimensions, Vector3 position,   float groundLevel)
         {
             Material = new PBRMaterial(obstacleMaterialPath);
             Model = LoadModel(obstacleModelPath);
+
+
+            InitModels(Model, Material);
+            InitModels(OpenDoorModel, DoorMaterial);
+            InitModels(ClosedDoorModel, DoorMaterial);
+
             Dimensions = dimensions;
             GroundLevel = groundLevel;
+            IsDoorOpen = false;
 
-            // Ajustement de la hauteur pour que la base soit au niveau du sol
+            // Ajustement de la hauteur pour que l'obstacle repose bien au sol
             Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
 
             Center = Position;
             HalfSize = Dimensions / 2;
 
-            Box = new BoundingBox(
-                Position - HalfSize,
-                Position + HalfSize
-            );
+            Box = new BoundingBox(Position - HalfSize, Position + HalfSize);
+
+
+            // Calcul de la taille du modèle
+            BoundingBox tempBox = GetModelBoundingBox(Model);
+            Vector3 modelsize = tempBox.Max - tempBox.Min;
+
+            // Calcul du facteur d'échelle en fonction de la bounding box
+            Vector3 boxSize = Box.Max - Box.Min;
+            Vector3 scale = boxSize / modelsize;
+
+            // Appliquer l'échelle au modèle
+            Scale = scale;
+
+            // Appliquer la mise à l'échelle sur le modèle
+            SetModelScale(Model, scale);
         }
+
         public void ToggleDoor()
         {
             IsDoorOpen = !IsDoorOpen;
         }
+
         public unsafe void InitModels(Model model, PBRMaterial material)
         {
             for (int i = 0; i < model.MeshCount; i++)
@@ -100,5 +129,28 @@ namespace DIMEN
                 model.Materials[0] = material.Material;
             }
         }
+
+        // Nouvelle fonction pour appliquer l'échelle au modèle
+        public unsafe void SetModelScale(Model model, Vector3 scale)
+        {
+            // Applique la mise à l'échelle sur chaque sommet du modèle
+            for (int i = 0; i < model.MeshCount; i++)
+            {
+                Mesh mesh = model.Meshes[i];
+                for (int j = 0; j < mesh.VertexCount; j++)
+                {
+                    // Calculer la nouvelle position de chaque sommet
+                    float x = mesh.Vertices[j * 3] * scale.X;
+                    float y = mesh.Vertices[j * 3 + 1] * scale.Y;
+                    float z = mesh.Vertices[j * 3 + 2] * scale.Z;
+
+                    // Appliquer la nouvelle position au sommet
+                    mesh.Vertices[j * 3] = x;
+                    mesh.Vertices[j * 3 + 1] = y;
+                    mesh.Vertices[j * 3 + 2] = z;
+                }
+            }
+        }
+
     }
 }

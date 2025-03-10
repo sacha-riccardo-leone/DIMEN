@@ -17,7 +17,6 @@ namespace DIMEN
         public float GroundLevel { get; private set; }
         public bool IsFalling;
         public float Speed;
-
         public Player(string playerMaterialPath, string playerModelPath, Vector3 playerDimensions, float groundLevel)
         {
             Material = new PBRMaterial (playerMaterialPath);
@@ -97,8 +96,6 @@ namespace DIMEN
 
         public void HandleCollision(List <Obstacle> obstacles, bool isTopView)
         {
-            
-
             foreach (Obstacle obstacle in obstacles)
             {
                 if (CheckCollisionBoxes(Box, obstacle.Box) && !isTopView)
@@ -129,6 +126,7 @@ namespace DIMEN
                     if (CheckCollisionBoxes(Box, obstacle.Box))
                     {
                         Position.Y = obstacle.Position.Y + obstacle.Dimensions.Y / 2;
+                        break;
                     }
                     else
                     {

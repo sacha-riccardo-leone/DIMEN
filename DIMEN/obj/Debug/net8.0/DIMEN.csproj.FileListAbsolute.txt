@@ -134,3 +134,5 @@ C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\play
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\player\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\ui_ux\fonts\HEXAGON_.TTF
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\ui_ux\fonts\upheavtt.ttf
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\keys\pickupkeys.wav
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\door\dooropen.wav

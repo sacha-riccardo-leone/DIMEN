@@ -79,9 +79,7 @@ namespace DIMEN
                 new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f),
                 new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f)
             );
-
         }
-
         private void Brake()
         {
             float deceleration = 0.9f; // Freinage plus naturel

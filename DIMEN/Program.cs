@@ -2,52 +2,53 @@
 using static Raylib_cs.Raylib;
 using System.Numerics;
 using System;
-using System.Diagnostics;
-using System.Reflection;
-using static System.Formats.Asn1.AsnWriter;
+
 
 namespace DIMEN
 {
     public class Program
     {
         enum GameState { Menu, Playing, Settings, Exit }
-        static GameState currentState = GameState.Menu;  // On commence dans le menu
+        static GameState currentState = GameState.Menu;
         static int screenWidth = 1800;
         static int screenHeight = 900;
 
-
+        // Déclaration des polices en tant que variables statiques
+        static Font hexagonFont;
+        static Font upheavttFont;
+        static Sound pickUpKeySound;
+        static Sound openDoorSound;
         static void Main()
         {
-            // Crée une seule fenêtre
+            // Initialisation de la fenêtre
             InitWindow(screenWidth, screenHeight, "DIMEN - Menu");
+            InitAudioDevice();
             SetTargetFPS(60);
 
+            // Chargement des polices une seule fois
+            hexagonFont = LoadFontEx("assets/ui_ux/fonts/HEXAGON_.TTF", 80, null, 0);
+            upheavttFont = LoadFontEx("assets/ui_ux/fonts/upheavtt.ttf", 30, null, 0);
+            pickUpKeySound = LoadSound("assets/sfx/keys/pickupkeys.wav");
+            openDoorSound = LoadSound("assets/sfx/door/dooropen.wav");
             // Boucle principale
             while (!WindowShouldClose() && currentState != GameState.Exit)
             {
-                // Gère les transitions d'état
-                HandleState();
+                switch (currentState)
+                {
+                    case GameState.Menu:
+                        MenuScreen();
+                        break;
+                    case GameState.Playing:
+                        GameScreen();
+                        break;
+                    case GameState.Settings:
+                        SettingsScreen();
+                        break;
+                    case GameState.Exit:
+                        break;
+                }
             }
 
-        }
-
-        // Cette méthode gère les états du jeu (Menu, Jeu, Paramètres, etc.)
-        static void HandleState()
-        {
-            switch (currentState)
-            {
-                case GameState.Menu:
-                    MenuScreen();
-                    break;
-                case GameState.Playing:
-                    GameScreen();
-                    break;
-                case GameState.Settings:
-                    SettingsScreen();
-                    break;
-                case GameState.Exit:
-                    break;
-            }
         }
 
         static void MenuScreen()
@@ -61,10 +62,8 @@ namespace DIMEN
             string option2 = "Assignations des touches";
             string option3 = "Quitter";
 
-            int titleSize = 80;
             int optionSize = 30;
 
-            int titleX = (screenWidth - MeasureText(title, titleSize)) / 2 - 25;
             int option1X = (screenWidth - MeasureText(option1, optionSize)) / 2 + 5;
             int option2X = (screenWidth - MeasureText(option2, optionSize)) / 2 - 30;
             int option3X = (screenWidth - MeasureText(option3, optionSize)) / 2;
@@ -72,9 +71,6 @@ namespace DIMEN
             int option1Y = 450;
             int option2Y = 500;
             int option3Y = 550;
-
-            Font hexagonFont = LoadFontEx("assets/ui_ux/fonts/HEXAGON_.TTF", titleSize, null, 0);
-            Font upheavttFont = LoadFontEx("assets/ui_ux/fonts/upheavtt.ttf", optionSize, null, 0);
 
             // Position de la souris
             Vector2 mousePos = GetMousePosition();
@@ -90,7 +86,7 @@ namespace DIMEN
                           mousePos.Y >= option3Y && mousePos.Y <= option3Y + optionSize;
 
             // Affichage du menu avec effet de surbrillance
-            DrawTextEx(hexagonFont, title, new Vector2(titleX, 300), titleSize, 2, Color.Black);
+            DrawTextEx(hexagonFont, title, new Vector2((screenWidth - MeasureText(title, 80)) / 2, 300), 80, 2, Color.Black);
             DrawTextEx(upheavttFont, option1, new Vector2(option1X, option1Y), optionSize, 2, hover1 ? Color.DarkGray : Color.Black);
             DrawTextEx(upheavttFont, option2, new Vector2(option2X, option2Y), optionSize, 2, hover2 ? Color.DarkGray : Color.Black);
             DrawTextEx(upheavttFont, option3, new Vector2(option3X, option3Y), optionSize, 2, hover3 ? Color.DarkGray : Color.Black);
@@ -105,6 +101,7 @@ namespace DIMEN
 
             EndDrawing();
         }
+
         static void SettingsScreen()
         {
             BeginDrawing();
@@ -121,8 +118,6 @@ namespace DIMEN
 
             int text1Y = 150;
             int text2Y = 50;
-
-            Font upheavttFont = LoadFontEx("assets/ui_ux/fonts/upheavtt.ttf", text2Size, null, 0);
 
             Vector2 mousePos = GetMousePosition();
             bool hoverBack = mousePos.X >= text2X && mousePos.X <= text2X + MeasureText(text2, text2Size) &&
@@ -141,6 +136,7 @@ namespace DIMEN
             }
 
             EndDrawing();
+
             if (IsKeyPressed(KeyboardKey.Escape))
             {
                 currentState = GameState.Menu;
@@ -151,6 +147,7 @@ namespace DIMEN
 
             // Initialisation
             InitWindow(screenWidth, screenHeight, "DIMEN");
+            
             SetTargetFPS(60);
             DisableCursor();
 
@@ -160,8 +157,9 @@ namespace DIMEN
             Model keyModel = LoadModel("assets/objects/Old_Key.obj");
             Material skyBox = Shaders.LoadSkybox("assets/skybox/skybox.hdr");
             InitModels(keyModel, KeyMaterial);
-
-            Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
+            
+            SetMasterVolume(100);
+            
             Vector2 planeSize = new Vector2(1000, 1000);
 
             // Variables pour la gestion du mouvement et de la rotation
@@ -174,9 +172,7 @@ namespace DIMEN
             const float GRIDLEVEL = -3f;
             float groundLevel = GRIDLEVEL;
 
-            // Positions des objets
             Vector3 planePosition = new Vector3(0, GRIDLEVEL, 0);
-            Vector3 keyPosition = new Vector3(0);
 
             Cooldown cooldown = new Cooldown(5.0f);
 
@@ -188,7 +184,7 @@ namespace DIMEN
                "assets/textures/default/",
                "assets/textures/metal/door/",
                "assets/objects/Obstacle.obj",
-               new Vector3(16),
+               new Vector3(8),
                new Vector3(0),
                doorDimensions,
                "assets/objects/opendoor.obj",
@@ -198,31 +194,21 @@ namespace DIMEN
             Obstacle obstacle2 = new(
                "assets/textures/default/",
                "assets/objects/Obstacle.obj",
-               new Vector3(2),
-               new Vector3(12, 0, 12),
-               groundLevel
-           );
-            Obstacle obstacle3 = new(
-               "assets/textures/default/",
-               "assets/objects/Obstacle.obj",
-               new Vector3(3),
-               new Vector3(-10, 0, -10),
-               groundLevel
-           );
-            Obstacle obstacle4 = new(
-               "assets/textures/default/",
-               "assets/objects/Obstacle.obj",
-               new Vector3(3),
-               new Vector3(-20, 0, -20),
+               new Vector3(3,30,3),
+               new Vector3(-8, 0, 12),
                groundLevel
            );
 
+
+            Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
+            Vector3 keyPosition = new Vector3();
+
             // Supposons que tu as une collection d'obstacles
-            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4 };
+            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2};
 
             Vector3 playerDimensions = new Vector3(1);
             Player player1 = new(
-                "assets/textures/default/",
+                "assets/textures/metal/player/",
                 "assets/objects/Cube.obj",
                 playerDimensions,
                 groundLevel
@@ -235,7 +221,12 @@ namespace DIMEN
                 float deltaTime = GetFrameTime();
 
                 keyRotationAngle++;
-                keyPosition.Y = obstacle1.Position.Y + colliderObstacleDimension.Y + 1f;
+                float obstacleTop = obstacle2.Position.Y + obstacle2.Dimensions.Y / 2 + keyDimensions.Y / 2;
+
+                keyPosition.Y = obstacleTop;
+                keyPosition.X = obstacle2.Position.X;
+                keyPosition.Z = obstacle2.Position.Z;
+
                 BoundingBox keyBox = new BoundingBox(keyPosition - (keyDimensions / 2), keyPosition + (keyDimensions / 2));
 
                 if (IsKeyPressed(KeyboardKey.E) && !cooldown.IsTopView)
@@ -250,17 +241,12 @@ namespace DIMEN
                 Vector3 moveDirection = new Vector3(MathF.Sin(radians), 0, MathF.Cos(radians));
                 Vector3 strafeDirection = new Vector3(MathF.Cos(radians), 0, -MathF.Sin(radians));
 
+                // Suivi de la caméra sur le joueur
                 dimensionCamera.PlayerPosition = player1.Position;
                 dimensionCamera.Radians = radians;
                 dimensionCamera.MoveDirection = moveDirection;
 
-                if (CheckCollisionBoxes(keyBox, player1.Box))
-                {
-                    player1.HasKey = true;
-                }
-
                 player1.Update(moveDirection, strafeDirection, deltaTime);
-
                 player1.HandleCollision(obstacles, cooldown.IsTopView);
 
                 // Dans la boucle principale
@@ -268,9 +254,16 @@ namespace DIMEN
                 {
                     cooldown.ToggleView();
                 }
+                if (!player1.HasKey)
+                {
+                    if (CheckCollisionBoxes(keyBox, player1.Box) && !cooldown.IsTopView)
+                    {
+                        player1.HasKey = true;
+                        PlaySound(pickUpKeySound);
+                    }
+                }
 
                 cooldown.Update(deltaTime);
-
                 // Appliquer la position de la caméra en fonction de l'état
                 if (cooldown.IsTopView)
                     dimensionCamera.TopViewPosition();
@@ -301,6 +294,7 @@ namespace DIMEN
                     if (!obstacle1.IsDoorOpen && CheckCollisionBoxes(player1.Box, obstacle1.DoorBox))
                     {
                         obstacle1.IsDoorOpen = true;
+                        PlaySound(openDoorSound);
                     }
                     if (obstacle1.IsDoorOpen && !cooldown.IsTopView)
                     {
@@ -321,12 +315,6 @@ namespace DIMEN
                 DrawSphere(Shaders.Light2.Position, 1.0f, Color.White);
                 DrawSphere(Shaders.Light3.Position, 1.0f, Color.White);
                 DrawSphere(Shaders.Light4.Position, 1.0f, Color.White);
-
-                foreach (Obstacle obstacle in obstacles)
-                {
-                    DrawBoundingBox(obstacle.Box, Color.Red);
-                }
-                DrawBoundingBox(player1.Box, Color.Blue);
 
                 EndMode3D();
 

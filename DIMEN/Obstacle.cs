@@ -22,11 +22,12 @@ namespace DIMEN
         public BoundingBox DoorBox { get; private set; }
         public float GroundLevel { get; private set; }
         public bool IsDoorOpen;
+        public readonly Vector3 Scale;
 
         public Obstacle(string obstacleMaterialPath, string doorMaterialPath, string obstacleModelPath, Vector3 dimensions, Vector3 position, Vector3 doorDimensions, string openDoorModelPath, string closedDoorModelPath, float groundLevel)
         {
-            Material = new PBRMaterial (obstacleMaterialPath);
-            DoorMaterial = new PBRMaterial (doorMaterialPath);
+            Material = new PBRMaterial(obstacleMaterialPath);
+            DoorMaterial = new PBRMaterial(doorMaterialPath);
             Model = LoadModel(obstacleModelPath);
             OpenDoorModel = LoadModel(openDoorModelPath);
             ClosedDoorModel = LoadModel(closedDoorModelPath);
@@ -36,27 +37,45 @@ namespace DIMEN
             InitModels(ClosedDoorModel, DoorMaterial);
 
             Dimensions = dimensions;
-            Position = position;
             DoorDimensions = doorDimensions;
             GroundLevel = groundLevel;
             IsDoorOpen = false;
+
+            // Ajustement de la hauteur pour que l'obstacle repose bien au sol
+            Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
 
             Center = Position;
             HalfSize = Dimensions / 2;
 
             Box = new BoundingBox(Position - HalfSize, Position + HalfSize);
-            DoorPosition = Center + new Vector3(0, GroundLevel + DoorDimensions.Y / 2, HalfSize.Z);
-            DoorBox = new BoundingBox(DoorPosition - DoorDimensions / 2, DoorPosition + DoorDimensions / 2);
-        }
 
+            // Ajustement de la hauteur de la porte pour qu'elle soit au sol
+            DoorPosition = new Vector3(
+                Center.X,  // Aligné avec l'obstacle
+                GroundLevel + DoorDimensions.Y / 2, // La base de la porte touche le sol
+                Center.Z + HalfSize.Z // Placée sur la face avant de l'obstacle
+            );
+
+            DoorBox = new BoundingBox(DoorPosition - DoorDimensions / 2, DoorPosition + DoorDimensions / 2);
+
+            BoundingBox tempBox = GetModelBoundingBox(Model);
+            Vector3 modelsize = tempBox.Max - tempBox.Min;
+            Vector3 boxSize = Box.Max - Box.Min;
+            Vector3 scale = boxSize / modelsize;
+
+            Scale = scale;
+
+        }
 
         public Obstacle(string obstacleMaterialPath, string obstacleModelPath, Vector3 dimensions, Vector3 position, float groundLevel)
         {
             Material = new PBRMaterial(obstacleMaterialPath);
             Model = LoadModel(obstacleModelPath);
             Dimensions = dimensions;
-            Position = position;
             GroundLevel = groundLevel;
+
+            // Ajustement de la hauteur pour que la base soit au niveau du sol
+            Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
 
             Center = Position;
             HalfSize = Dimensions / 2;
@@ -66,6 +85,7 @@ namespace DIMEN
                 Position + HalfSize
             );
         }
+
 
         public void ToggleDoor()
         {

@@ -12,7 +12,7 @@ namespace DIMEN
         enum GameState { Menu, Playing, Settings, Exit }
         static GameState currentState = GameState.Menu;  // On commence dans le menu
         static int screenWidth = 1920;
-        static int screenHeight = 1080;
+        static int screenHeight = 1050;
 
         static void Main()
         {
@@ -34,18 +34,17 @@ namespace DIMEN
                         break;
                 }
             }
-            CloseWindow();
         }
         static void MenuScreen()
         {
             BeginDrawing();
             ClearBackground(Color.Gray);
 
-            // Texte centré pour le menu
+            // Définition des textes
             string title = "DIMEN";
-            string option1 = "1. Jouer";
-            string option2 = "2. Assignations des touches";
-            string option3 = "3. Quitter";
+            string option1 = "Jouer";
+            string option2 = "Assignations des touches";
+            string option3 = "Quitter";
 
             int titleSize = 40;
             int optionSize = 30;
@@ -55,47 +54,78 @@ namespace DIMEN
             int option2X = (screenWidth - MeasureText(option2, optionSize)) / 2;
             int option3X = (screenWidth - MeasureText(option3, optionSize)) / 2;
 
-            // Affichage du menu
-            DrawText(title, titleX, 300, titleSize, Color.White);
-            DrawText(option1, option1X, 450, optionSize, Color.LightGray);
-            DrawText(option2, option2X, 500, optionSize, Color.LightGray);
-            DrawText(option3, option3X, 550, optionSize, Color.LightGray);
+            int option1Y = 450;
+            int option2Y = 500;
+            int option3Y = 550;
 
-            // Vérification de l'entrée utilisateur
-            if (IsKeyPressed(KeyboardKey.One))
+            // Position de la souris
+            Vector2 mousePos = GetMousePosition();
+
+            // Vérification du survol des options
+            bool hover1 = mousePos.X >= option1X && mousePos.X <= option1X + MeasureText(option1, optionSize) &&
+                          mousePos.Y >= option1Y && mousePos.Y <= option1Y + optionSize;
+
+            bool hover2 = mousePos.X >= option2X && mousePos.X <= option2X + MeasureText(option2, optionSize) &&
+                          mousePos.Y >= option2Y && mousePos.Y <= option2Y + optionSize;
+
+            bool hover3 = mousePos.X >= option3X && mousePos.X <= option3X + MeasureText(option3, optionSize) &&
+                          mousePos.Y >= option3Y && mousePos.Y <= option3Y + optionSize;
+
+            // Affichage du menu avec effet de surbrillance
+            DrawText(title, titleX, 300, titleSize, Color.White);
+            DrawText(option1, option1X, option1Y, optionSize, hover1 ? Color.White : Color.LightGray);
+            DrawText(option2, option2X, option2Y, optionSize, hover2 ? Color.White : Color.LightGray);
+            DrawText(option3, option3X, option3Y, optionSize, hover3 ? Color.White : Color.LightGray);
+
+            // Dessin des contours des zones cliquables en rouge
+            DrawRectangleLines(option1X, option1Y, MeasureText(option1, optionSize), optionSize, Color.Red);
+            DrawRectangleLines(option2X, option2Y, MeasureText(option2, optionSize), optionSize, Color.Red);
+            DrawRectangleLines(option3X, option3Y, MeasureText(option3, optionSize), optionSize, Color.Red);
+
+            // Détection des clics sur les options
+            if (IsMouseButtonPressed(MouseButton.Left))
             {
-                currentState = GameState.Playing;  // Passage à l'écran de jeu
-            }
-            if (IsKeyPressed(KeyboardKey.Two))
-            {
-                currentState = GameState.Settings;  // Sortie de l'application
-            }
-            if (IsKeyPressed(KeyboardKey.Three))
-            {
-                currentState = GameState.Exit;  // Sortie de l'application
+                if (hover1) currentState = GameState.Playing;
+                if (hover2) currentState = GameState.Settings;
+                if (hover3) currentState = GameState.Exit;
             }
 
             EndDrawing();
         }
+
         static void SettingsScreen()
         {
             BeginDrawing();
             ClearBackground(Color.Gray);
 
-            string text1 = "Touches de déplacement :\n\nW : Haut\n\nA : Gauche\n\nS : Bas\n\nD : Droite\n\n\nTouches dimentionnelles :\n\nE : Rotation caméra\n\nQ : Mode plan";
-            string text2 = "Retour : <-";
-            
-            DrawText(text1, 100, 150, 20, Color.White);
-            DrawText(text2, 50, 50, 20, Color.White);
+            string text1 = "Touches de déplacement :\n\nW : Haut\n\nA : Gauche\n\nS : Bas\n\nD : Droite\n\n\nTouches dimensionnelles :\n\nE : Rotation caméra\n\nQ : Mode plan";
+            string text2 = "<- Retour";
 
-            // Vérification de l'entrée utilisateur
-            if (IsKeyPressed(KeyboardKey.Left))
+            int text2Size = 20;
+            int text2X = 50;
+            int text2Y = 50;
+            int text2Width = MeasureText(text2, text2Size);
+
+            Vector2 mousePos = GetMousePosition();
+            bool hoverBack = mousePos.X >= text2X && mousePos.X <= text2X + text2Width &&
+                             mousePos.Y >= text2Y && mousePos.Y <= text2Y + text2Size;
+
+            DrawText(text1, 100, 150, 20, Color.White);
+            DrawText(text2, text2X, text2Y, text2Size, hoverBack ? Color.Yellow : Color.White);
+
+            // Dessin des contours de la zone cliquable en rouge
+            DrawRectangleLines(text2X, text2Y, text2Width, text2Size, Color.Red);
+
+            // Détection du clic sur "Retour"
+            if (hoverBack && IsMouseButtonPressed(MouseButton.Left))
             {
                 currentState = GameState.Menu;
             }
 
             EndDrawing();
         }
+
+
         public static unsafe void GameScreen()
         {
 
@@ -149,15 +179,37 @@ namespace DIMEN
                groundLevel
            );
 
+           // Obstacle obstacle1 = new(
+           //    "assets/textures/default/",
+           //    "assets/objects/Obstacle.obj",
+           //    new Vector3(16),
+           //    new Vector3(0),
+           //    groundLevel
+           //);
+
             Obstacle obstacle2 = new(
                "assets/textures/default/",
                "assets/objects/Obstacle.obj",
-               new Vector3(8),
-               new Vector3(20, 0, 20),
+               new Vector3(2),
+               new Vector3(12, 0, 12),
+               groundLevel
+           );
+            Obstacle obstacle3 = new(
+               "assets/textures/default/",
+               "assets/objects/Obstacle.obj",
+               new Vector3(3),
+               new Vector3(-10, 0, -10),
+               groundLevel
+           );
+            Obstacle obstacle4 = new(
+               "assets/textures/default/",
+               "assets/objects/Obstacle.obj",
+               new Vector3(3),
+               new Vector3(-20, 0, -20),
                groundLevel
            );
 
-            List<Obstacle> obstacles = [obstacle1, obstacle2];
+            List<Obstacle> obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
 
             Vector3 playerDimensions = new Vector3(1);
             Player player1 = new(
@@ -199,52 +251,57 @@ namespace DIMEN
                 }
 
                 player1.Update(moveDirection, strafeDirection, deltaTime);
-                player1.HandleCollision(obstacles, isTopView);
+                player1.HandleCollision(obstacle1, isTopView);
+
 
                 // Changer de mode de vue (vue de dessus ou perspective)
                 if (IsKeyPressed(KeyboardKey.Q))
                 {
                     if (isTopView)
                     {
+                        // Si en vue de dessus et qu'on appuie sur Q, désactive la vue de dessus
                         isTopView = false;
-                        cooldown.Progress = 0.0f;
-                        cooldown.Filling = true; // Recommence le remplissage
+                        cooldown.Progress = 0.0f;  // Réinitialise la barre
+                        cooldown.Filling = true;   // Commence à remplir la barre
                     }
-                    else if (cooldown.Progress >= 1.0f) // Ne peut réactiver la vue de dessus que si le cooldown est terminé
+                    else if (cooldown.Progress >= 1.0f) // Si la barre est remplie, active la vue de dessus
                     {
-                        // Sinon, active la vue de dessus
                         isTopView = true;
-                        cooldown.TotalCooldown = 0.0f;
-                        cooldown.Filling = false;
+                        cooldown.TotalCooldown = 0.0f;  // Réinitialise le cooldown
+                        cooldown.Filling = false;  // Commence à vider la barre
                     }
                 }
-                // Gestion de la barre de progression (remplissage ou vidage)
+
+                // Gestion du remplissage ou vidage de la barre de progression
                 if (isTopView)
                 {
+                    // Si en vue de dessus, on vide la barre
                     cooldown.Progress -= deltaTime / cooldown.Duration;
                     if (cooldown.Progress <= 0.0f)
                     {
                         cooldown.Progress = 0.0f;
-                        cooldown.Filling = true;
+                        cooldown.Filling = true; // La barre recommence à se remplir après la désactivation
                     }
                 }
                 else if (cooldown.Filling)
                 {
+                    // Si la barre est en train de se remplir
                     cooldown.Progress += deltaTime / cooldown.Duration;
                     if (cooldown.Progress >= 1.0f)
                     {
                         cooldown.Progress = 1.0f;
-                        cooldown.Filling = false;
+                        cooldown.Filling = false; // La barre est complètement remplie
                     }
                 }
-                // Si en vue de dessus
+
+                // Gestion du timer en vue de dessus
                 if (isTopView)
                 {
                     cooldown.Timer += deltaTime;
                     if (cooldown.Timer >= cooldown.Duration)
                     {
-                        isTopView = false;
-                        cooldown.Filling = true; // Démarrer le remplissage après la désactivation
+                        isTopView = false;  // Désactive la vue de dessus après le temps écoulé
+                        cooldown.Filling = true;  // Démarre le remplissage pour pouvoir réactiver la vue de dessus
                     }
                     dimensionCamera.TopViewPosition();
                 }
@@ -252,6 +309,8 @@ namespace DIMEN
                 {
                     dimensionCamera.DefaultPosition();
                 }
+
+
 
                 // Dessin de la scène
                 BeginDrawing();
@@ -264,8 +323,7 @@ namespace DIMEN
 
                 DrawPlane(planePosition, planeSize, Color.DarkGray);
                 DrawModel(player1.Model, player1.Position, 1, Color.White);
-                DrawModel(obstacle1.Model, obstacle1.Position, 1, Color.White);
-                DrawModelEx(obstacle2.Model, obstacle2.Position, Vector3.Zero, 0, new Vector3(0f), Color.White);
+
 
                 if (player1.HasKey)
                 {
@@ -301,9 +359,6 @@ namespace DIMEN
                 DrawBoundingBox(player1.Box, Color.Blue);
 
                 EndMode3D();
-
-                
-
                 // Dessin de la barre de progression
                 DrawRectangle(30, 30, 200, 25, Color.LightGray);
                 DrawRectangle(30, 30, (int)(200 * cooldown.Progress), 25, Color.Green);

@@ -94,10 +94,10 @@ namespace DIMEN
             
         }
 
-        public void HandleCollision(List <Obstacle> obstacles, bool isTopView)
+        public void HandleCollision(Obstacle obstacle, bool isTopView)
         {
-            foreach(Obstacle obstacle in obstacles)
-            {
+            //foreach(Obstacle obstacle in obstacles)
+            //{
                 if (CheckCollisionBoxes(Box, obstacle.Box) && !isTopView)
                 {
                     float deltaX = Position.X - obstacle.Position.X;
@@ -132,7 +132,7 @@ namespace DIMEN
                         Position.Y = GroundLevel;
                     }
                 }
-            }
+            //}
             
         }
         public unsafe void InitModels(Model model, PBRMaterial material)

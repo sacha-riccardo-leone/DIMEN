@@ -7,21 +7,22 @@ namespace DIMEN
 {
     internal class Obstacle
     {
-        public PBRMaterial Material { get; private set; }
-        public PBRMaterial DoorMaterial { get; private set; }
-        public Model Model { get; private set; }
-        public Vector3 Dimensions { get; private set; }
-        public Vector3 Position { get; private set; }
-        public BoundingBox Box { get; private set; }
-        public Vector3 Center { get; private set; }
-        public Vector3 HalfSize { get; private set; }
-        public Vector3 DoorPosition { get; private set; }
-        public Vector3 DoorDimensions { get; private set; }
-        public Model OpenDoorModel { get; private set; }
-        public Model ClosedDoorModel { get; private set; }
-        public BoundingBox DoorBox { get; private set; }
-        public float GroundLevel { get; private set; }
+        public PBRMaterial Material;
+        public PBRMaterial DoorMaterial;
+        public Model Model;
+        public Vector3 Dimensions;
+        public Vector3 Position;
+        public BoundingBox Box;
+        public Vector3 Center;
+        public Vector3 HalfSize;
+        public Vector3 DoorPosition;
+        public Vector3 DoorDimensions;
+        public Model OpenDoorModel;
+        public Model ClosedDoorModel;
+        public BoundingBox DoorBox;
+        public float GroundLevel;
         public bool IsDoorOpen;
+        public bool DoorExtended;
         public readonly Vector3 Scale;
 
         public Obstacle(string obstacleMaterialPath, string doorMaterialPath, string obstacleModelPath, Vector3 dimensions, Vector3 position, Vector3 doorDimensions, string openDoorModelPath, string closedDoorModelPath, float groundLevel)
@@ -40,6 +41,7 @@ namespace DIMEN
             DoorDimensions = doorDimensions;
             GroundLevel = groundLevel;
             IsDoorOpen = false;
+            DoorExtended = false;
 
             // Ajustement de la hauteur pour que l'obstacle repose bien au sol
             Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
@@ -53,8 +55,9 @@ namespace DIMEN
             DoorPosition = new Vector3(
                 Center.X,  // Aligné avec l'obstacle
                 GroundLevel + DoorDimensions.Y / 2, // La base de la porte touche le sol
-                Center.Z + HalfSize.Z // Placée sur la face avant de l'obstacle
+                Center.Z - HalfSize.Z // Placée sur la face arrière de l'obstacle
             );
+
 
             DoorBox = new BoundingBox(DoorPosition - DoorDimensions / 2, DoorPosition + DoorDimensions / 2);
 

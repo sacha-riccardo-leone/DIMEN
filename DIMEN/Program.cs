@@ -154,7 +154,7 @@ namespace DIMEN
             Shaders.Init();
 
             PBRMaterial KeyMaterial = new PBRMaterial("assets/textures/key/");
-            Model keyModel = LoadModel("assets/objects/Old_Key.obj");
+            Model keyModel = LoadModel("assets/objects/key/Old_Key.obj");
             Material skyBox = Shaders.LoadSkybox("assets/skybox/skybox.hdr");
             InitModels(keyModel, KeyMaterial);
             
@@ -181,30 +181,54 @@ namespace DIMEN
             Vector3 colliderObstacleDimension = new Vector3(16) / 2;
 
             Obstacle obstacle1 = new(
-               "assets/textures/default/",
-               "assets/textures/metal/door/",
-               "assets/objects/Obstacle.obj",
-               new Vector3(8),
-               new Vector3(0),
-               doorDimensions,
-               "assets/objects/opendoor.obj",
-               "assets/objects/closeddoor.obj",
-               groundLevel
-           );
+                "assets/textures/default/",
+                "assets/textures/metal/door/",
+                "assets/objects/obstacles/Obstacle_hole.obj",
+                new Vector3(11), // Position centrale
+                new Vector3(0),
+                doorDimensions,
+                "assets/objects/door/opendoor.obj",
+                "assets/objects/door/closeddoor.obj",
+                groundLevel
+            );
+
             Obstacle obstacle2 = new(
-               "assets/textures/default/",
-               "assets/objects/Obstacle.obj",
-               new Vector3(3,30,3),
-               new Vector3(-8, 0, 12),
-               groundLevel
-           );
+                "assets/textures/default/",
+                "assets/objects/obstacles/Obstacle.obj",
+                new Vector3(2, 30, 2), // Taille de l'obstacle
+                new Vector3(-10, 0, 0), // Position à gauche de obstacle1
+                groundLevel
+            );
+
+            Obstacle obstacle3 = new(
+                "assets/textures/default/",
+                "assets/objects/obstacles/Obstacle.obj",
+                new Vector3(2, 30, 2), // Taille de l'obstacle
+                new Vector3(10, 0, 0), // Position à droite de obstacle1
+                groundLevel
+            );
+            Obstacle obstacle4 = new(
+                "assets/textures/default/",
+                "assets/objects/obstacles/Obstacle.obj",
+                new Vector3(2, 30, 2), // Taille de l'obstacle
+                new Vector3(-5, 0, -10), // Position à droite de obstacle1
+                groundLevel
+            );
+            Obstacle obstacle5 = new(
+                "assets/textures/default/",
+                "assets/objects/obstacles/Obstacle.obj",
+                new Vector3(2, 30, 2), // Taille de l'obstacle
+                new Vector3(0, 0, 10), // Position à droite de obstacle1
+                groundLevel
+            );
+
 
 
             Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
             Vector3 keyPosition = new Vector3();
 
             // Supposons que tu as une collection d'obstacles
-            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2};
+            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5};
 
             Vector3 playerDimensions = new Vector3(1);
             Player player1 = new(
@@ -213,12 +237,16 @@ namespace DIMEN
                 playerDimensions,
                 groundLevel
             );
+            player1.Position = new Vector3(0, groundLevel, 30);
+
+            BoundingBox finishLevelBox = new BoundingBox();
+
 
             while (!WindowShouldClose())
             {
-
                 Shaders.UpdatePBRLighting(dimensionCamera.Camera.Position);
                 float deltaTime = GetFrameTime();
+                dimensionCamera.UpdateCamera(deltaTime);
 
                 keyRotationAngle++;
                 float obstacleTop = obstacle2.Position.Y + obstacle2.Dimensions.Y / 2 + keyDimensions.Y / 2;
@@ -247,7 +275,19 @@ namespace DIMEN
                 dimensionCamera.MoveDirection = moveDirection;
 
                 player1.Update(moveDirection, strafeDirection, deltaTime);
-                player1.HandleCollision(obstacles, cooldown.IsTopView);
+
+                if (!obstacle1.IsDoorOpen)
+                {
+                    player1.HandleCollision(obstacles, cooldown.IsTopView);
+                }
+                else
+                {
+                    if (!CheckCollisionBoxes(player1.Box, obstacle1.DoorBox))
+                    {
+                        player1.HandleCollision(obstacles, cooldown.IsTopView);
+                    }
+                }
+                
 
                 // Dans la boucle principale
                 if (IsKeyPressed(KeyboardKey.Q))
@@ -256,6 +296,9 @@ namespace DIMEN
                 }
                 if (!player1.HasKey)
                 {
+                    Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
+                    keyModel.Transform = rotationMatrix;
+
                     if (CheckCollisionBoxes(keyBox, player1.Box) && !cooldown.IsTopView)
                     {
                         player1.HasKey = true;
@@ -264,20 +307,46 @@ namespace DIMEN
                 }
 
                 cooldown.Update(deltaTime);
-                // Appliquer la position de la caméra en fonction de l'état
+
                 if (cooldown.IsTopView)
-                    dimensionCamera.TopViewPosition();
+                {
+                    dimensionCamera.TopViewPosition(); // Passer à la vue top
+                }
                 else
-                    dimensionCamera.DefaultPosition();
+                {
+                    dimensionCamera.DefaultPosition(); // Revenir à la vue par défaut
+                }
+
+                if (!cooldown.IsTopView && obstacle1.IsDoorOpen && !obstacle1.DoorExtended)
+                {
+                    float extension = 5.0f;
+                    obstacle1.DoorBox = new BoundingBox(
+                        new Vector3(obstacle1.DoorBox.Min.X, obstacle1.DoorBox.Min.Y, obstacle1.DoorBox.Min.Z),
+                        new Vector3(obstacle1.DoorBox.Max.X , obstacle1.DoorBox.Max.Y, obstacle1.DoorBox.Max.Z + extension / 2)
+                    );
+
+                    float newZLength = 2.0f; // Choisir la longueur en Z pour la nouvelle bounding box
+                    finishLevelBox = new BoundingBox(
+                        new Vector3(obstacle1.DoorBox.Min.X, obstacle1.DoorBox.Min.Y, obstacle1.DoorBox.Max.Z), // Place à la suite de la DoorBox existante
+                        new Vector3(obstacle1.DoorBox.Max.X, obstacle1.DoorBox.Max.Y, obstacle1.DoorBox.Max.Z + newZLength)
+                    );
+
+                    // Marquer que l'extension a été appliquée
+                    obstacle1.DoorExtended = true;
+                }
+
+                // Réinitialiser doorExtended lorsque la porte se ferme pour réappliquer l'extension si nécessaire
+                if (!obstacle1.IsDoorOpen)
+                {
+                    obstacle1.DoorExtended = false;
+                }
+
 
                 // Dessin de la scène
                 BeginDrawing();
                 ClearBackground(Color.RayWhite);
                 BeginMode3D(dimensionCamera.Camera);
                 Shaders.DrawSkybox(skyBox);
-
-                Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
-                keyModel.Transform = rotationMatrix;
 
                 DrawPlane(planePosition, planeSize, Color.DarkGray);
                 DrawModel(player1.Model, player1.Position, 1, Color.White);
@@ -288,40 +357,70 @@ namespace DIMEN
                     DrawModelEx(obstacle.Model, obstacle.Position, Vector3.One, 0f, obstacle.Scale, Color.White);
                 }
 
-                if (player1.HasKey)
+                if (player1.HasKey && !player1.HasUsedKey)
                 {
                     // Vérification de la collision uniquement si la porte n'est pas déjà ouverte
                     if (!obstacle1.IsDoorOpen && CheckCollisionBoxes(player1.Box, obstacle1.DoorBox))
                     {
                         obstacle1.IsDoorOpen = true;
                         PlaySound(openDoorSound);
+
+                        // Marquer la clé comme utilisée pour qu'elle disparaisse
+                        player1.HasUsedKey = true;
                     }
-                    if (obstacle1.IsDoorOpen && !cooldown.IsTopView)
+
+                    // Dessiner la clé au-dessus du joueur seulement si elle n'a pas été utilisée
+                    if (!player1.HasUsedKey)
                     {
-                        DrawModel(obstacle1.OpenDoorModel, obstacle1.DoorPosition, 1, Color.White);
+                        DrawModel(keyModel, new Vector3(player1.Position.X, player1.Position.Y + keyDimensions.Y * 1.5f, player1.Position.Z), 1, Color.White);
                     }
-                    else
-                    {
-                        DrawModel(obstacle1.ClosedDoorModel, obstacle1.DoorPosition, 1, Color.White);
-                    }
+                }
+
+                // Dessiner la porte (ouverte ou fermée)
+                if (obstacle1.IsDoorOpen)
+                {
+                    DrawModelEx(obstacle1.OpenDoorModel, obstacle1.DoorPosition, Vector3.Zero, 0, new Vector3(1), Color.White);
                 }
                 else
                 {
-                    DrawModel(keyModel, keyPosition, 1, Color.White);
-                    DrawModel(obstacle1.ClosedDoorModel, obstacle1.DoorPosition, 1, Color.White);  // Affiche la porte fermée si le joueur n'a pas la clé
+                    DrawModelEx(obstacle1.ClosedDoorModel, obstacle1.DoorPosition, Vector3.Zero, 0, new Vector3(1), Color.White);
                 }
 
-                DrawSphere(Shaders.Light1.Position, 1.0f, Color.White);
-                DrawSphere(Shaders.Light2.Position, 1.0f, Color.White);
-                DrawSphere(Shaders.Light3.Position, 1.0f, Color.White);
-                DrawSphere(Shaders.Light4.Position, 1.0f, Color.White);
+                // Dessiner la clé au sol si elle n'a pas été ramassée
+                if (!player1.HasKey)
+                {
+                    DrawModel(keyModel, keyPosition, 1, Color.White);
+                }
+
+
+                //DrawBoundingBox(obstacle1.Box, Color.Red);
+                //DrawBoundingBox(obstacle2.Box, Color.Red);
+                //DrawBoundingBox(obstacle3.Box, Color.Red);
+                //DrawBoundingBox(obstacle4.Box, Color.Red);
+                //DrawBoundingBox(obstacle5.Box, Color.Red);
+                //DrawBoundingBox(keyBox, Color.Red);
+                //DrawBoundingBox(player1.Box, Color.Red);
+                DrawBoundingBox(obstacle1.DoorBox, Color.Red);
+                DrawBoundingBox(finishLevelBox, Color.Green);
+
+
+
+                //DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
+                //DrawSphere(Shaders.Light2.Position, 1.0f, Color.Orange);
+                //DrawSphere(Shaders.Light3.Position, 1.0f, Color.Orange);
+                //DrawSphere(Shaders.Light4.Position, 1.0f, Color.Orange);
 
                 EndMode3D();
 
-                // Dessin de la barre de progression
-                DrawRectangle(30, 30, 200, 25, Color.LightGray);
-                DrawRectangle(30, 30, (int)(200 * cooldown.Progress), 25, Color.Green);
-                DrawRectangleLines(30, 30, 200, 25, Color.Black);
+                // Calculer la position de la barre
+                int barWidth = 400; // Largeur de la barre
+                int barHeight = 5; // Hauteur de la barre
+                int barX = (screenWidth - barWidth) / 2; // Centrer la barre horizontalement
+                int barY = screenHeight - barHeight - 60; // Positionner la barre en bas
+
+
+                // Dessiner la barre de cooldown (la partie remplie)
+                DrawRectangle(barX, barY, (int)(barWidth * cooldown.Progress), barHeight, Color.Blue);
 
                 EndDrawing();
                 if (IsKeyPressed(KeyboardKey.Escape))

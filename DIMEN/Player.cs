@@ -14,6 +14,7 @@ namespace DIMEN
         public BoundingBox Box { get; private set; }
         public float Friction { get; private set; }
         public bool HasKey;
+        public bool HasUsedKey;
         public float GroundLevel { get; private set; }
         public bool IsFalling;
         public float Speed;

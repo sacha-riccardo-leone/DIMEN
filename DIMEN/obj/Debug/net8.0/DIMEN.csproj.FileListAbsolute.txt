@@ -138,3 +138,5 @@ C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\obstacles\O
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\obstacles\Obstacle.obj
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\obstacles\Obstacle_hole.mtl
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\obstacles\Obstacle_hole.obj
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\music\backgroundmusic.mp3
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\music\backgroundMusic.wav

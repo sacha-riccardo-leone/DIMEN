@@ -135,6 +135,42 @@ namespace DIMEN
             }
 
         }
+        public void HandleHallway(List<BoundingBox> obstacles)
+        {
+            foreach (BoundingBox obstacle in obstacles)
+            {
+                if (CheckCollisionBoxes(Box, obstacle))
+                {
+                    Vector3 obstacleCenter = (obstacle.Min + obstacle.Max) / 2;
+                    Vector3 playerCenter = (Box.Min + Box.Max) / 2;
+                    Vector3 playerDimensions = Box.Max - Box.Min;
+                    Vector3 obstacleDimensions = obstacle.Max - obstacle.Min;
+
+                    float deltaX = playerCenter.X - obstacleCenter.X;
+                    float deltaZ = playerCenter.Z - obstacleCenter.Z;
+                    float deltaY = playerCenter.Y - obstacleCenter.Y;
+
+                    float overlapX = (playerDimensions.X / 2 + obstacleDimensions.X / 2) - Math.Abs(deltaX);
+                    float overlapZ = (playerDimensions.Z / 2 + obstacleDimensions.Z / 2) - Math.Abs(deltaZ);
+                    float overlapY = (playerDimensions.Y / 2 + obstacleDimensions.Y / 2) - Math.Abs(deltaY);
+
+                    if (overlapX < overlapZ && overlapX < overlapY)
+                    {
+                        Position.X += deltaX > 0 ? overlapX : -overlapX;
+                    }
+                    else if (overlapZ < overlapX && overlapZ < overlapY)
+                    {
+                        Position.Z += deltaZ > 0 ? overlapZ : -overlapZ;
+                    }
+                    else
+                    {
+                        Position.Y += deltaY > 0 ? overlapY - 0.01f : -overlapY + 0.01f;
+                    }
+                }
+
+            }
+        }
+
         public unsafe void InitModels(Model model, PBRMaterial material)
         {
             for (int i = 0; i < model.MeshCount; i++)

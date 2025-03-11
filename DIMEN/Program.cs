@@ -18,6 +18,7 @@ namespace DIMEN
         static Font upheavttFont;
         static Sound pickUpKeySound;
         static Sound openDoorSound;
+        static Music backgroundMusic;
         static void Main()
         {
             // Initialisation de la fenêtre
@@ -30,6 +31,7 @@ namespace DIMEN
             upheavttFont = LoadFontEx("assets/ui_ux/fonts/upheavtt.ttf", 30, null, 0);
             pickUpKeySound = LoadSound("assets/sfx/keys/pickupkeys.wav");
             openDoorSound = LoadSound("assets/sfx/door/dooropen.wav");
+            backgroundMusic = LoadMusicStream("assets/sfx/music/backgroundMusic.wav");
             // Boucle principale
             while (!WindowShouldClose() && currentState != GameState.Exit)
             {
@@ -87,9 +89,9 @@ namespace DIMEN
 
             // Affichage du menu avec effet de surbrillance
             DrawTextEx(hexagonFont, title, new Vector2((screenWidth - MeasureText(title, 80)) / 2, 300), 80, 2, Color.Black);
-            DrawTextEx(upheavttFont, option1, new Vector2(option1X, option1Y), optionSize, 2, hover1 ? Color.DarkGray : Color.Black);
-            DrawTextEx(upheavttFont, option2, new Vector2(option2X, option2Y), optionSize, 2, hover2 ? Color.DarkGray : Color.Black);
-            DrawTextEx(upheavttFont, option3, new Vector2(option3X, option3Y), optionSize, 2, hover3 ? Color.DarkGray : Color.Black);
+            DrawTextEx(upheavttFont, option1, new Vector2(option1X, option1Y), optionSize, 2, hover1 ? Color.White : Color.Black);
+            DrawTextEx(upheavttFont, option2, new Vector2(option2X, option2Y), optionSize, 2, hover2 ? Color.White : Color.Black);
+            DrawTextEx(upheavttFont, option3, new Vector2(option3X, option3Y), optionSize, 2, hover3 ? Color.White : Color.Black);
 
             // Détection des clics sur les options
             if (IsMouseButtonPressed(MouseButton.Left))
@@ -127,7 +129,7 @@ namespace DIMEN
             DrawTextEx(upheavttFont, text1, new Vector2(text1X, text1Y), text1Size, 2, Color.Black);
 
             // Affichage du deuxième texte avec la police upheavttFont et survol
-            DrawTextEx(upheavttFont, text2, new Vector2(text2X, text2Y), text2Size, 2, hoverBack ? Color.DarkGray : Color.Black);
+            DrawTextEx(upheavttFont, text2, new Vector2(text2X, text2Y), text2Size, 2, hoverBack ? Color.White : Color.Black);
 
             // Détection du clic sur "Retour"
             if (hoverBack && IsMouseButtonPressed(MouseButton.Left))
@@ -147,7 +149,7 @@ namespace DIMEN
 
             // Initialisation
             InitWindow(screenWidth, screenHeight, "DIMEN");
-            
+
             SetTargetFPS(60);
             DisableCursor();
 
@@ -157,9 +159,9 @@ namespace DIMEN
             Model keyModel = LoadModel("assets/objects/key/Old_Key.obj");
             Material skyBox = Shaders.LoadSkybox("assets/skybox/skybox.hdr");
             InitModels(keyModel, KeyMaterial);
-            
+
             SetMasterVolume(100);
-            
+
             Vector2 planeSize = new Vector2(1000, 1000);
 
             // Variables pour la gestion du mouvement et de la rotation
@@ -223,30 +225,41 @@ namespace DIMEN
             );
 
 
-
             Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
             Vector3 keyPosition = new Vector3();
 
             // Supposons que tu as une collection d'obstacles
-            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5};
+            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5 };
 
-            Vector3 playerDimensions = new Vector3(1);
+
             Player player1 = new(
                 "assets/textures/metal/player/",
                 "assets/objects/Cube.obj",
-                playerDimensions,
+                new Vector3(1),
                 groundLevel
             );
             player1.Position = new Vector3(0, groundLevel, 30);
 
             BoundingBox finishLevelBox = new BoundingBox();
+            BoundingBox hallway = new BoundingBox();
+            BoundingBox wall1 = new BoundingBox();
+            BoundingBox wall2 = new BoundingBox();
 
+            PlayMusicStream(backgroundMusic);
+            SetMusicVolume(backgroundMusic, 0.1f);
 
-            while (!WindowShouldClose())
+            bool isPaused = false;
+
+            while (currentState == GameState.Playing)
             {
+                if (IsKeyPressed(KeyboardKey.Escape))
+                {
+                    isPaused = !isPaused; // Inverse l'état de la pause
+                }
+                
                 Shaders.UpdatePBRLighting(dimensionCamera.Camera.Position);
                 float deltaTime = GetFrameTime();
-                dimensionCamera.UpdateCamera(deltaTime);
+                
 
                 keyRotationAngle++;
                 float obstacleTop = obstacle2.Position.Y + obstacle2.Dimensions.Y / 2 + keyDimensions.Y / 2;
@@ -257,7 +270,7 @@ namespace DIMEN
 
                 BoundingBox keyBox = new BoundingBox(keyPosition - (keyDimensions / 2), keyPosition + (keyDimensions / 2));
 
-                if (IsKeyPressed(KeyboardKey.E) && !cooldown.IsTopView)
+                if (IsKeyPressed(KeyboardKey.E) && !cooldown.IsTopView && !isPaused)
                 {
                     targetRotationAngle += 90f;
                 }
@@ -274,19 +287,6 @@ namespace DIMEN
                 dimensionCamera.Radians = radians;
                 dimensionCamera.MoveDirection = moveDirection;
 
-                player1.Update(moveDirection, strafeDirection, deltaTime);
-
-                if (!obstacle1.IsDoorOpen)
-                {
-                    player1.HandleCollision(obstacles, cooldown.IsTopView);
-                }
-                else
-                {
-                    if (!CheckCollisionBoxes(player1.Box, obstacle1.DoorBox))
-                    {
-                        player1.HandleCollision(obstacles, cooldown.IsTopView);
-                    }
-                }
                 
 
                 // Dans la boucle principale
@@ -294,7 +294,7 @@ namespace DIMEN
                 {
                     cooldown.ToggleView();
                 }
-                if (!player1.HasKey)
+                if (!player1.HasKey && !isPaused)
                 {
                     Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
                     keyModel.Transform = rotationMatrix;
@@ -306,7 +306,7 @@ namespace DIMEN
                     }
                 }
 
-                cooldown.Update(deltaTime);
+                
 
                 if (cooldown.IsTopView)
                 {
@@ -319,28 +319,53 @@ namespace DIMEN
 
                 if (!cooldown.IsTopView && obstacle1.IsDoorOpen && !obstacle1.DoorExtended)
                 {
-                    float extension = 5.0f;
-                    obstacle1.DoorBox = new BoundingBox(
-                        new Vector3(obstacle1.DoorBox.Min.X, obstacle1.DoorBox.Min.Y, obstacle1.DoorBox.Min.Z),
-                        new Vector3(obstacle1.DoorBox.Max.X , obstacle1.DoorBox.Max.Y, obstacle1.DoorBox.Max.Z + extension / 2)
+
+
+                    float extension = 7f;
+                    float reduction = 0.1f; // Ajuste cette valeur selon le besoin
+
+                    hallway = new BoundingBox(
+                        new Vector3(obstacle1.DoorBox.Min.X + reduction, obstacle1.DoorBox.Min.Y, obstacle1.DoorBox.Min.Z),
+                        new Vector3(obstacle1.DoorBox.Max.X - reduction, obstacle1.DoorBox.Max.Y, obstacle1.DoorBox.Max.Z + extension / 2 - reduction)
                     );
 
-                    float newZLength = 2.0f; // Choisir la longueur en Z pour la nouvelle bounding box
                     finishLevelBox = new BoundingBox(
-                        new Vector3(obstacle1.DoorBox.Min.X, obstacle1.DoorBox.Min.Y, obstacle1.DoorBox.Max.Z), // Place à la suite de la DoorBox existante
-                        new Vector3(obstacle1.DoorBox.Max.X, obstacle1.DoorBox.Max.Y, obstacle1.DoorBox.Max.Z + newZLength)
+                        new Vector3(hallway.Min.X, hallway.Min.Y, hallway.Max.Z),
+                        new Vector3(hallway.Max.X, hallway.Max.Y, hallway.Max.Z + extension / 2)
+                    );
+
+                    wall1 = new BoundingBox(
+                        new Vector3(obstacle1.DoorBox.Min.X, obstacle1.DoorBox.Min.Y, obstacle1.DoorBox.Min.Z + reduction * 3),
+                        new Vector3(obstacle1.DoorBox.Min.X, obstacle1.DoorBox.Max.Y, obstacle1.DoorBox.Max.Z + extension)
+                    );
+                    wall2 = new BoundingBox(
+                        new Vector3(obstacle1.DoorBox.Max.X, obstacle1.DoorBox.Min.Y, obstacle1.DoorBox.Min.Z + reduction * 3),
+                        new Vector3(obstacle1.DoorBox.Max.X, obstacle1.DoorBox.Max.Y, obstacle1.DoorBox.Max.Z + extension)
                     );
 
                     // Marquer que l'extension a été appliquée
                     obstacle1.DoorExtended = true;
-                }
 
+                }
+                if (!CheckCollisionBoxes(player1.Box, hallway))
+                {
+                    player1.HandleCollision(obstacles, cooldown.IsTopView);
+                }
+                else
+                {
+                    List<BoundingBox> walls = new List<BoundingBox> { wall1, wall2 };
+                    player1.HandleHallway(walls);
+                }
                 // Réinitialiser doorExtended lorsque la porte se ferme pour réappliquer l'extension si nécessaire
                 if (!obstacle1.IsDoorOpen)
                 {
                     obstacle1.DoorExtended = false;
                 }
 
+                if (CheckCollisionBoxes(player1.Box, finishLevelBox))
+                {
+                    currentState = GameState.Menu;
+                }
 
                 // Dessin de la scène
                 BeginDrawing();
@@ -392,17 +417,14 @@ namespace DIMEN
                     DrawModel(keyModel, keyPosition, 1, Color.White);
                 }
 
+                
 
-                //DrawBoundingBox(obstacle1.Box, Color.Red);
-                //DrawBoundingBox(obstacle2.Box, Color.Red);
-                //DrawBoundingBox(obstacle3.Box, Color.Red);
-                //DrawBoundingBox(obstacle4.Box, Color.Red);
-                //DrawBoundingBox(obstacle5.Box, Color.Red);
-                //DrawBoundingBox(keyBox, Color.Red);
-                //DrawBoundingBox(player1.Box, Color.Red);
-                DrawBoundingBox(obstacle1.DoorBox, Color.Red);
+                //DrawBoundingBox(player1.Box, Color.Yellow);
+                //DrawBoundingBox(obstacle1.Box, Color.Blue);
+                //DrawBoundingBox(hallway, Color.Pink);
+                //DrawBoundingBox(wall1, Color.Red);
+                //DrawBoundingBox(wall2, Color.Green);
                 DrawBoundingBox(finishLevelBox, Color.Green);
-
 
 
                 //DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
@@ -420,12 +442,23 @@ namespace DIMEN
 
 
                 // Dessiner la barre de cooldown (la partie remplie)
-                DrawRectangle(barX, barY, (int)(barWidth * cooldown.Progress), barHeight, Color.Blue);
-
+                DrawRectangle(barX, barY, (int)(barWidth * cooldown.Progress), barHeight, Color.White);
+                DrawText(CheckCollisionBoxes(player1.Box, finishLevelBox).ToString(), 30, 30, 10, Color.Black);
                 EndDrawing();
-                if (IsKeyPressed(KeyboardKey.Escape))
+
+
+                if (!isPaused)
                 {
-                    currentState = GameState.Menu;
+                    UpdateMusicStream(backgroundMusic);
+                    dimensionCamera.UpdateCamera(deltaTime);
+                    player1.Update(moveDirection, strafeDirection, deltaTime);
+                    cooldown.Update(deltaTime);
+                }
+                else
+                {
+                    //BeginDrawing();
+                    //DrawText("Game Paused", screenWidth / 2, screenHeight / 2, 100, Color.Black);
+                    //EndDrawing();
                 }
             }
             static unsafe void InitModels(Model model, PBRMaterial material)

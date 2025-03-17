@@ -248,14 +248,8 @@ namespace DIMEN
             PlayMusicStream(backgroundMusic);
             SetMusicVolume(backgroundMusic, 0.1f);
 
-            bool isPaused = false;
-
             while (currentState == GameState.Playing)
             {
-                if (IsKeyPressed(KeyboardKey.Escape))
-                {
-                    isPaused = !isPaused; // Inverse l'état de la pause
-                }
                 
                 Shaders.UpdatePBRLighting(dimensionCamera.Camera.Position);
                 float deltaTime = GetFrameTime();
@@ -270,7 +264,7 @@ namespace DIMEN
 
                 BoundingBox keyBox = new BoundingBox(keyPosition - (keyDimensions / 2), keyPosition + (keyDimensions / 2));
 
-                if (IsKeyPressed(KeyboardKey.E) && !cooldown.IsTopView && !isPaused)
+                if (IsKeyPressed(KeyboardKey.E) && !cooldown.IsTopView)
                 {
                     targetRotationAngle += 90f;
                 }
@@ -287,14 +281,12 @@ namespace DIMEN
                 dimensionCamera.Radians = radians;
                 dimensionCamera.MoveDirection = moveDirection;
 
-                
-
                 // Dans la boucle principale
                 if (IsKeyPressed(KeyboardKey.Q))
                 {
                     cooldown.ToggleView();
                 }
-                if (!player1.HasKey && !isPaused)
+                if (!player1.HasKey)
                 {
                     Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
                     keyModel.Transform = rotationMatrix;
@@ -306,7 +298,10 @@ namespace DIMEN
                     }
                 }
 
-                
+                UpdateMusicStream(backgroundMusic);
+                dimensionCamera.UpdateCamera(deltaTime);
+                player1.Update(moveDirection, strafeDirection, deltaTime);
+                cooldown.Update(deltaTime);
 
                 if (cooldown.IsTopView)
                 {
@@ -347,6 +342,7 @@ namespace DIMEN
                     obstacle1.DoorExtended = true;
 
                 }
+
                 if (!CheckCollisionBoxes(player1.Box, hallway))
                 {
                     player1.HandleCollision(obstacles, cooldown.IsTopView);
@@ -354,7 +350,15 @@ namespace DIMEN
                 else
                 {
                     List<BoundingBox> walls = new List<BoundingBox> { wall1, wall2 };
-                    player1.HandleHallway(walls);
+                    if(!cooldown.IsTopView)
+                    {
+                        player1.HandleHallway(walls);
+                    }
+                    else 
+                    {
+                        player1.HandleCollision(obstacles, cooldown.IsTopView);
+                    }
+                    
                 }
                 // Réinitialiser doorExtended lorsque la porte se ferme pour réappliquer l'extension si nécessaire
                 if (!obstacle1.IsDoorOpen)
@@ -417,15 +421,12 @@ namespace DIMEN
                     DrawModel(keyModel, keyPosition, 1, Color.White);
                 }
 
-                
-
                 //DrawBoundingBox(player1.Box, Color.Yellow);
                 //DrawBoundingBox(obstacle1.Box, Color.Blue);
                 //DrawBoundingBox(hallway, Color.Pink);
                 //DrawBoundingBox(wall1, Color.Red);
                 //DrawBoundingBox(wall2, Color.Green);
                 DrawBoundingBox(finishLevelBox, Color.Green);
-
 
                 //DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
                 //DrawSphere(Shaders.Light2.Position, 1.0f, Color.Orange);
@@ -444,22 +445,8 @@ namespace DIMEN
                 // Dessiner la barre de cooldown (la partie remplie)
                 DrawRectangle(barX, barY, (int)(barWidth * cooldown.Progress), barHeight, Color.White);
                 DrawText(CheckCollisionBoxes(player1.Box, finishLevelBox).ToString(), 30, 30, 10, Color.Black);
-                EndDrawing();
+                EndDrawing();        
 
-
-                if (!isPaused)
-                {
-                    UpdateMusicStream(backgroundMusic);
-                    dimensionCamera.UpdateCamera(deltaTime);
-                    player1.Update(moveDirection, strafeDirection, deltaTime);
-                    cooldown.Update(deltaTime);
-                }
-                else
-                {
-                    //BeginDrawing();
-                    //DrawText("Game Paused", screenWidth / 2, screenHeight / 2, 100, Color.Black);
-                    //EndDrawing();
-                }
             }
             static unsafe void InitModels(Model model, PBRMaterial material)
             {
@@ -476,8 +463,5 @@ namespace DIMEN
             // Déchargement des ressources
             CloseWindow();
         }
-
     }
-
-
 }

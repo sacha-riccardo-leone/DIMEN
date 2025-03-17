@@ -18,6 +18,8 @@ namespace DIMEN
         static Font upheavttFont;
         static Sound pickUpKeySound;
         static Sound openDoorSound;
+        static Sound pressureClick;
+        static Sound pressureUnclick;
         static Music backgroundMusic;
         static void Main()
         {
@@ -32,6 +34,9 @@ namespace DIMEN
             pickUpKeySound = LoadSound("assets/sfx/keys/pickupkeys.wav");
             openDoorSound = LoadSound("assets/sfx/door/dooropen.wav");
             backgroundMusic = LoadMusicStream("assets/sfx/music/backgroundMusic.wav");
+            pressureClick = LoadSound("assets/sfx/pressureplate/click.wav");
+            pressureUnclick = LoadSound("assets/sfx/pressureplate/unclick.wav");
+
             // Boucle principale
             while (!WindowShouldClose() && currentState != GameState.Exit)
             {
@@ -170,7 +175,6 @@ namespace DIMEN
             float rotationSpeed = 5f;
             float keyRotationAngle = 0.0f;
 
-            // Variables pour la gravité et la physique
             const float GRIDLEVEL = -3f;
             float groundLevel = GRIDLEVEL;
 
@@ -224,13 +228,20 @@ namespace DIMEN
                 groundLevel
             );
 
-
-            Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
-            Vector3 keyPosition = new Vector3();
-
-            // Supposons que tu as une collection d'obstacles
-            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5 };
-
+            PressurePlate plaque1 = new(
+                "assets/objects/pressure_plate/pressed.obj",
+                "assets/objects/pressure_plate/unpressed.obj",
+                "assets/textures/default/",
+                new Vector3(3, 0.3f, 3),
+                new Vector3(10, groundLevel, 10)
+            );
+            PressurePlate plaque2 = new(
+                "assets/objects/pressure_plate/pressed.obj",
+                "assets/objects/pressure_plate/unpressed.obj",
+                "assets/textures/default/",
+                new Vector3(3, 0.3f, 3),
+                new Vector3(obstacle1.Position.X, obstacle1.Position.Y + obstacle1.Dimensions.Y / 2, obstacle1.Position.Z)
+            );
 
             Player player1 = new(
                 "assets/textures/metal/player/",
@@ -238,27 +249,33 @@ namespace DIMEN
                 new Vector3(1),
                 groundLevel
             );
-            player1.Position = new Vector3(0, groundLevel, 30);
+
+            Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
+            Vector3 keyPosition = new Vector3();
 
             BoundingBox finishLevelBox = new BoundingBox();
             BoundingBox hallway = new BoundingBox();
             BoundingBox wall1 = new BoundingBox();
             BoundingBox wall2 = new BoundingBox();
 
+            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5 };
+            List<PressurePlate> plaques = new List<PressurePlate> { plaque1, plaque2 };
+
+            player1.Position = new Vector3(0, groundLevel, 30);
+
             PlayMusicStream(backgroundMusic);
             SetMusicVolume(backgroundMusic, 0.1f);
 
             while (currentState == GameState.Playing)
             {
-                
                 Shaders.UpdatePBRLighting(dimensionCamera.Camera.Position);
                 float deltaTime = GetFrameTime();
-                
 
                 keyRotationAngle++;
-                float obstacleTop = obstacle2.Position.Y + obstacle2.Dimensions.Y / 2 + keyDimensions.Y / 2;
 
-                keyPosition.Y = obstacleTop;
+                float obstacle2Top = obstacle2.Position.Y + obstacle2.Dimensions.Y / 2 + keyDimensions.Y / 2;
+
+                keyPosition.Y = obstacle2Top;
                 keyPosition.X = obstacle2.Position.X;
                 keyPosition.Z = obstacle2.Position.Z;
 
@@ -314,8 +331,6 @@ namespace DIMEN
 
                 if (!cooldown.IsTopView && obstacle1.IsDoorOpen && !obstacle1.DoorExtended)
                 {
-
-
                     float extension = 7f;
                     float reduction = 0.1f; // Ajuste cette valeur selon le besoin
 
@@ -340,12 +355,39 @@ namespace DIMEN
 
                     // Marquer que l'extension a été appliquée
                     obstacle1.DoorExtended = true;
+                }
 
+                foreach(PressurePlate plaque in plaques)
+                {
+                    // Ajouter une variable pour stocker l'état précédent
+                    bool previousState = plaque.IsPressed;
+
+                    if (CheckCollisionBoxes(player1.Box, plaque.PressBox))
+                    {
+                        plaque.IsPressed = true;
+
+                        // Jouer le son uniquement si l'état change
+                        if (!previousState)
+                        {
+                            PlaySound(pressureClick);
+                        }
+                    }
+                    else
+                    {
+                        plaque.IsPressed = false;
+
+                        // Jouer le son uniquement si l'état change
+                        if (previousState)
+                        {
+                            PlaySound(pressureUnclick);
+                        }
+                    }
                 }
 
                 if (!CheckCollisionBoxes(player1.Box, hallway))
                 {
                     player1.HandleCollision(obstacles, cooldown.IsTopView);
+                    player1.HandlePlate(plaques, cooldown.IsTopView);
                 }
                 else
                 {
@@ -357,6 +399,7 @@ namespace DIMEN
                     else 
                     {
                         player1.HandleCollision(obstacles, cooldown.IsTopView);
+                        player1.HandlePlate(plaques, cooldown.IsTopView);
                     }
                     
                 }
@@ -384,6 +427,18 @@ namespace DIMEN
                 {
                     // Utiliser DrawModelEx pour appliquer l'échelle, la position, et potentiellement la rotation
                     DrawModelEx(obstacle.Model, obstacle.Position, Vector3.One, 0f, obstacle.Scale, Color.White);
+                }
+                foreach (PressurePlate plaque in plaques)
+                {
+                    if (plaque.IsPressed)
+                    {
+                        DrawModelEx(plaque.PressedModel, plaque.Position, Vector3.One, 0f, plaque.Scale, Color.White);
+                    }
+                    else
+                    {
+                        DrawModelEx(plaque.Model, plaque.Position, Vector3.One, 0f, plaque.Scale, Color.White);
+                    }
+                    
                 }
 
                 if (player1.HasKey && !player1.HasUsedKey)
@@ -421,17 +476,14 @@ namespace DIMEN
                     DrawModel(keyModel, keyPosition, 1, Color.White);
                 }
 
-                //DrawBoundingBox(player1.Box, Color.Yellow);
-                //DrawBoundingBox(obstacle1.Box, Color.Blue);
-                //DrawBoundingBox(hallway, Color.Pink);
-                //DrawBoundingBox(wall1, Color.Red);
-                //DrawBoundingBox(wall2, Color.Green);
                 DrawBoundingBox(finishLevelBox, Color.Green);
+                DrawBoundingBox(obstacle1.Box, Color.Blue);
+                DrawBoundingBox(plaque1.Box, Color.Green);
+                DrawBoundingBox(plaque1.PressBox, Color.Red);
+                DrawBoundingBox(plaque2.Box, Color.Green);
+                DrawBoundingBox(plaque2.PressBox, Color.Red);
 
                 //DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
-                //DrawSphere(Shaders.Light2.Position, 1.0f, Color.Orange);
-                //DrawSphere(Shaders.Light3.Position, 1.0f, Color.Orange);
-                //DrawSphere(Shaders.Light4.Position, 1.0f, Color.Orange);
 
                 EndMode3D();
 
@@ -444,7 +496,7 @@ namespace DIMEN
 
                 // Dessiner la barre de cooldown (la partie remplie)
                 DrawRectangle(barX, barY, (int)(barWidth * cooldown.Progress), barHeight, Color.White);
-                DrawText(CheckCollisionBoxes(player1.Box, finishLevelBox).ToString(), 30, 30, 10, Color.Black);
+                DrawText(player1.Velocity.ToString(), 30, 30 ,30 , Color.White);
                 EndDrawing();        
 
             }

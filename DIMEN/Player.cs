@@ -35,7 +35,7 @@ namespace DIMEN
 }
         public void Update(Vector3 moveDirection, Vector3 strafeDirection, float deltaTime)
         {
-            float gravity = -9.81f;
+            float gravity = -18;
 
             if (Position.Y > GroundLevel)
             {
@@ -118,6 +118,7 @@ namespace DIMEN
                     else
                     {
                         Position.Y += deltaY > 0 ? overlapY - 0.01f : -overlapY + 0.01f;
+                        Velocity.Y = 0;
                     }
                 }
                 if (isTopView)
@@ -168,6 +169,42 @@ namespace DIMEN
                     }
                 }
 
+            }
+        }
+        public void HandlePlate(List<PressurePlate> plaques, bool isTopView)
+        {
+            foreach (PressurePlate plaque in plaques)
+            {
+                if (CheckCollisionBoxes(Box, plaque.Box) && !isTopView)
+                {
+                    float deltaX = Position.X - plaque.Position.X;
+                    float deltaZ = Position.Z - plaque.Position.Z;
+                    float deltaY = Position.Y - plaque.Position.Y;
+
+                    float overlapX = Dimensions.X / 2 + plaque.Dimensions.X / 2 - Math.Abs(deltaX);
+                    float overlapZ = Dimensions.Z / 2 + plaque.Dimensions.Z / 2 - Math.Abs(deltaZ);
+                    float overlapY = Dimensions.Y / 2 + plaque.Dimensions.Y / 2 - Math.Abs(deltaY);
+
+                    // Place l'objet au-dessus de la plaque de pression
+                    Position.Y = plaque.Position.Y + plaque.Dimensions.Y / 2 + Dimensions.Y / 2;
+                    Velocity.Y = 0;
+                    if (overlapX < overlapZ && overlapX < overlapY)
+                    {
+                        Position.X += deltaX > 0 ? overlapX : -overlapX;
+                    }
+                    else if (overlapZ < overlapX && overlapZ < overlapY)
+                    {
+                        Position.Z += deltaZ > 0 ? overlapZ : -overlapZ;
+                    }
+                }
+                else
+                {
+                    if (CheckCollisionBoxes(Box, plaque.Box) && isTopView)
+                    {
+                        Position.Y = plaque.Position.Y + plaque.Dimensions.Y / 2 + Dimensions.Y / 2;
+                        break;
+                    }
+                }
             }
         }
 

@@ -140,3 +140,16 @@ C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\obstacles\O
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\obstacles\Obstacle_hole.obj
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\music\backgroundmusic.mp3
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\music\backgroundMusic.wav
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\pressure_plate\pressed.mtl
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\pressure_plate\pressed.obj
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\pressure_plate\unpressed.mtl
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\objects\pressure_plate\unpressed.obj
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\PressurePlate.cs
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\pressureplate\click.wav
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\pressureplate\unclick.wav
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\button\Image_Diffuse.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\button\Image_Emission.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\button\Image_Metalness.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\button\Image_Normal.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\button\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\button\Poliigon_MetalSteelBrushed_7174_Roughness.jpg

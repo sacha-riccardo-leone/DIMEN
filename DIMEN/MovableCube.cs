@@ -13,8 +13,6 @@ namespace DIMEN
         public Vector3 Velocity;
         public BoundingBox Box { get; private set; }
         public float Friction { get; private set; }
-        public bool HasKey;
-        public bool HasUsedKey;
         public float GroundLevel { get; private set; }
         public float Speed;
         public MovableCube(string materialPath, string modelPath, Vector3 dimensions, float groundLevel)
@@ -31,7 +29,7 @@ namespace DIMEN
             Friction = 0.15f;
             Speed = 5.0f;
         }
-        public void Update(float deltaTime, Player player)
+        public void Update(float deltaTime, Player player, List<MovableCube> movable)
         {
             float gravity = -18;
 
@@ -118,23 +116,40 @@ namespace DIMEN
             }
 
         }
-        public void HandlePlate(List<PressurePlate> plaques, bool isTopView)
+        public void HandlePlate(List<PressurePlate> plaques)
         {
             foreach (PressurePlate plaque in plaques)
             {
-                if (CheckCollisionBoxes(Box, plaque.Box) && !isTopView)
+                if (CheckCollisionBoxes(Box, plaque.Box))
                 {
+                    float compressionAmount = 0.1f; // Hauteur de réduction
+
+                    if (plaque.IsPressed)
+                    {
+                        plaque.Box.Max.Y = plaque.OriginalMaxY - compressionAmount; // Réduit la hauteur
+                    }
+                    else
+                    {
+                        plaque.Box.Max.Y = plaque.OriginalMaxY; // Remet la hauteur initiale
+                    }
+
                     float deltaX = Position.X - plaque.Position.X;
                     float deltaZ = Position.Z - plaque.Position.Z;
                     float deltaY = Position.Y - plaque.Position.Y;
 
-                    float overlapX = Dimensions.X / 2 + plaque.Dimensions.X / 2 - Math.Abs(deltaX);
-                    float overlapZ = Dimensions.Z / 2 + plaque.Dimensions.Z / 2 - Math.Abs(deltaZ);
-                    float overlapY = Dimensions.Y / 2 + plaque.Dimensions.Y / 2 - Math.Abs(deltaY);
+                    float overlapX = (Box.Max.X - Box.Min.X) / 2 + (plaque.Box.Max.X - plaque.Box.Min.X) / 2 - Math.Abs(deltaX);
+                    float overlapZ = (Box.Max.Z - Box.Min.Z) / 2 + (plaque.Box.Max.Z - plaque.Box.Min.Z) / 2 - Math.Abs(deltaZ);
+                    float overlapY = (Box.Max.Y - Box.Min.Y) / 2 + (plaque.Box.Max.Y - plaque.Box.Min.Y) / 2 - Math.Abs(deltaY);
 
-                    // Place l'objet au-dessus de la plaque de pression
-                    Position.Y = plaque.Position.Y + plaque.Dimensions.Y / 2 + Dimensions.Y / 2;
-                    Velocity.Y = 0;
+                    if (CheckCollisionBoxes(Box, plaque.PressBox))
+                    {
+                        Position.Y = plaque.Box.Max.Y + Dimensions.Y / 2;
+                    }
+
+                    Position.Y = plaque.Box.Max.Y + Dimensions.Y / 2;
+                    Velocity.Y = 0; // Stoppe la gravité
+
+                    // Résolution de la collision
                     if (overlapX < overlapZ && overlapX < overlapY)
                     {
                         Position.X += deltaX > 0 ? overlapX : -overlapX;
@@ -143,14 +158,7 @@ namespace DIMEN
                     {
                         Position.Z += deltaZ > 0 ? overlapZ : -overlapZ;
                     }
-                }
-                else
-                {
-                    if (CheckCollisionBoxes(Box, plaque.Box) && isTopView)
-                    {
-                        Position.Y = plaque.Position.Y + plaque.Dimensions.Y / 2 + Dimensions.Y / 2;
-                        break;
-                    }
+                    break;
                 }
             }
         }

@@ -101,13 +101,6 @@ C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\shaders\skybox.vs
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\skybox\skybox.hdr
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\key\Image_Diffuse1.png
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\key\Image_Diffuse2.png
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\door\Image_Diffuse.png
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\door\Image_Emission.png
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\door\Image_Metalness.png
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\door\Image_Normal.png
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\door\Poliigon_MetalSteelBrushed_7174.mtlx
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\door\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
-C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\door\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\obstacle\Image_Diffuse.png
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\obstacle\Image_Emission.png
 C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\obstacle\Image_Metalness.png
@@ -274,3 +267,33 @@ C:\Users\leones1\Desktop\Nouveau dossier\DIMEN\DIMEN\obj\Debug\net8.0\refint\DIM
 C:\Users\leones1\Desktop\Nouveau dossier\DIMEN\DIMEN\obj\Debug\net8.0\DIMEN.pdb
 C:\Users\leones1\Desktop\Nouveau dossier\DIMEN\DIMEN\obj\Debug\net8.0\DIMEN.genruntimeconfig.cache
 C:\Users\leones1\Desktop\Nouveau dossier\DIMEN\DIMEN\obj\Debug\net8.0\ref\DIMEN.dll
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\blue\Image_Diffuse.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\blue\Image_Emission.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\blue\Image_Metalness.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\blue\Image_Normal.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\blue\Poliigon_MetalSteelBrushed_7174.mtlx
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\blue\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\blue\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\grey\Image_Diffuse.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\grey\Image_Emission.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\grey\Image_Metalness.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\grey\Image_Normal.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\grey\Poliigon_MetalSteelBrushed_7174.mtlx
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\grey\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\grey\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\red\Image_Diffuse.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\red\Image_Emission.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\red\Image_Metalness.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\red\Image_Normal.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\red\Poliigon_MetalSteelBrushed_7174.mtlx
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\red\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\red\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\MovableCube.cs
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\yellow\Image_Diffuse.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\yellow\Image_Emission.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\yellow\Image_Metalness.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\yellow\Image_Normal.png
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\yellow\Poliigon_MetalSteelBrushed_7174.mtlx
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\yellow\Poliigon_MetalSteelBrushed_7174_Displacement.tiff
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\textures\metal\yellow\Poliigon_MetalSteelBrushed_7174_Roughness.jpg
+C:\Users\leones1\Desktop\DIMEN\DIMEN\bin\Debug\net8.0\assets\sfx\keys\keyappeared.wav

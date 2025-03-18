@@ -17,6 +17,7 @@ namespace DIMEN
         static Font hexagonFont;
         static Font upheavttFont;
         static Sound pickUpKeySound;
+        static Sound keyAppearedSound;
         static Sound openDoorSound;
         static Sound pressureClick;
         static Sound pressureUnclick;
@@ -32,6 +33,7 @@ namespace DIMEN
             hexagonFont = LoadFontEx("assets/ui_ux/fonts/HEXAGON_.TTF", 80, null, 0);
             upheavttFont = LoadFontEx("assets/ui_ux/fonts/upheavtt.ttf", 30, null, 0);
             pickUpKeySound = LoadSound("assets/sfx/keys/pickupkeys.wav");
+            keyAppearedSound = LoadSound("assets/sfx/keys/keyappeared.wav");
             openDoorSound = LoadSound("assets/sfx/door/dooropen.wav");
             backgroundMusic = LoadMusicStream("assets/sfx/music/backgroundMusic.wav");
             pressureClick = LoadSound("assets/sfx/pressureplate/click.wav");
@@ -175,6 +177,7 @@ namespace DIMEN
             float rotationSpeed = 5f;
             float keyRotationAngle = 0.0f;
             bool keyCanAppear = false;
+            bool keySoundPlayed = false;
 
             const float GRIDLEVEL = -3f;
             float groundLevel = GRIDLEVEL;
@@ -189,7 +192,7 @@ namespace DIMEN
 
             Obstacle obstacle1 = new(
                 "assets/textures/default/",
-                "assets/textures/metal/blue/",
+                "assets/textures/metal/yellow/",
                 "assets/objects/obstacles/Obstacle_hole.obj",
                 new Vector3(11), // Position centrale
                 new Vector3(0),
@@ -214,13 +217,6 @@ namespace DIMEN
                 new Vector3(10, 0, 0), // Position à droite de obstacle1
                 groundLevel
             );
-            Obstacle obstacle4 = new(
-                "assets/textures/default/",
-                "assets/objects/obstacles/Obstacle.obj",
-                new Vector3(2, 30, 2), // Taille de l'obstacle
-                new Vector3(-5, 0, -10), // Position à droite de obstacle1
-                groundLevel
-            );
             Obstacle obstacle5 = new(
                 "assets/textures/default/",
                 "assets/objects/obstacles/Obstacle.obj",
@@ -229,35 +225,44 @@ namespace DIMEN
                 groundLevel
             );
 
-            PressurePlate plaque1 = new(
-                "assets/objects/pressure_plate/pressed.obj",
-                "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/metal/red/",
-                new Vector3(3, 0.3f, 3),
-                new Vector3(10, groundLevel, 10)
-            );
-            PressurePlate plaque2 = new(
-                "assets/objects/pressure_plate/pressed.obj",
-                "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/metal/blue/",
-                new Vector3(3, 0.3f, 3),
-                new Vector3(obstacle1.Position.X, obstacle1.Position.Y + obstacle1.Dimensions.Y / 2, obstacle1.Position.Z)
-            );
-
             Player player1 = new(
-                "assets/textures/metal/red/",
+                "assets/textures/metal/grey/",
                 "assets/objects/Cube.obj",
                 new Vector3(1),
                 groundLevel
             );
 
             MovableCube movableCube1 = new(
+                "assets/textures/metal/red/",
+                "assets/objects/Cube.obj",
+                new Vector3(1),
+                groundLevel
+            );
+            MovableCube movableCube2 = new(
                 "assets/textures/metal/blue/",
                 "assets/objects/Cube.obj",
                 new Vector3(1),
                 groundLevel
-
             );
+
+            PressurePlate plate1 = new(
+                "assets/objects/pressure_plate/pressed.obj",
+                "assets/objects/pressure_plate/unpressed.obj",
+                "assets/textures/metal/red/",
+                new Vector3(3, 0.3f, 3),
+                new Vector3(10, groundLevel, 10),
+                movableCube1
+            );
+            PressurePlate plate2 = new(
+                "assets/objects/pressure_plate/pressed.obj",
+                "assets/objects/pressure_plate/unpressed.obj",
+                "assets/textures/metal/blue/",
+                new Vector3(3, 0.3f, 3),
+                new Vector3(obstacle1.Position.X, obstacle1.Position.Y + obstacle1.Dimensions.Y / 2, obstacle1.Position.Z),
+                movableCube2
+            );
+
+            bool bothPlatesPressed = false;
 
             Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
             Vector3 keyPosition = new Vector3();
@@ -268,12 +273,16 @@ namespace DIMEN
             BoundingBox wall2 = new BoundingBox();
 
 
-            List<MovableCube> movableCubes = new List<MovableCube> { movableCube1 };
-            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5 };
-            List<PressurePlate> plaques = new List<PressurePlate> { plaque1, plaque2 };
+            List<MovableCube> movableCubes = new List<MovableCube> { movableCube1, movableCube2 };
+            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle5 };
+            List<PressurePlate> plates = new List<PressurePlate> { plate1, plate2 };
 
-            player1.Position = new Vector3(0, groundLevel, 30);
-            movableCube1.Position = new Vector3(plaque1.Position.X, 80, plaque1.Position.Z);
+            player1.Position = new Vector3(0, groundLevel, 20);
+            //movableCube1.Position = new Vector3(obstacle1.Position.X, 100, obstacle1.Position.Z);
+            //movableCube2.Position = new Vector3(obstacle3.Position.X, 200, obstacle3.Position.Z);
+            
+            movableCube1.Position = new Vector3(0, groundLevel, 25);
+            movableCube2.Position = new Vector3(0, groundLevel, 30);
 
             PlayMusicStream(backgroundMusic);
             SetMusicVolume(backgroundMusic, 0.1f);
@@ -315,16 +324,18 @@ namespace DIMEN
                 {
                     cooldown.ToggleView();
                 }
-                
 
                 UpdateMusicStream(backgroundMusic);
                 dimensionCamera.UpdateCamera(deltaTime);
                 player1.Update(moveDirection, strafeDirection, deltaTime);
 
-                movableCube1.Update(deltaTime, player1);
-                movableCube1.HandleCollision(obstacles, cooldown.IsTopView);
-                movableCube1.HandlePlate(plaques, cooldown.IsTopView);
-
+                foreach(MovableCube mvCube in movableCubes)
+                {
+                    mvCube.Update(deltaTime, player1, movableCubes);
+                    mvCube.HandleCollision(obstacles, cooldown.IsTopView);
+                    mvCube.HandlePlate(plates);
+                }
+                
                 cooldown.Update(deltaTime);
 
                 if (cooldown.IsTopView)
@@ -364,13 +375,16 @@ namespace DIMEN
                     obstacle1.DoorExtended = true;
                 }
 
-                bool bothPlatesPressed = PressurePlate(player1, movableCube1, plaque1, plaque2);
-
+                bothPlatesPressed = PressurePlate(movableCubes, plates);
                 if (bothPlatesPressed)
                 {
                     keyCanAppear = true;
                 }
-
+                if (keyCanAppear && !keySoundPlayed) // Vérifie si le son a déjà été joué
+                {
+                    PlaySound(keyAppearedSound);
+                    keySoundPlayed = true; // Empêche la relecture du son
+                }
                 if (keyCanAppear)
                 {
                     if (!player1.HasKey)
@@ -385,11 +399,10 @@ namespace DIMEN
                         }
                     }
                 }
-
                 if (!CheckCollisionBoxes(player1.Box, hallway))
                 {
                     player1.HandleCollision(obstacles, cooldown.IsTopView);
-                    player1.HandlePlate(plaques, cooldown.IsTopView);
+                    player1.HandlePlate(plates);
                 }
                 else
                 {
@@ -401,9 +414,8 @@ namespace DIMEN
                     else 
                     {
                         player1.HandleCollision(obstacles, cooldown.IsTopView);
-                        player1.HandlePlate(plaques, cooldown.IsTopView);
-                    }
-                    
+                        player1.HandlePlate(plates);
+                    }    
                 }
                 // Réinitialiser doorExtended lorsque la porte se ferme pour réappliquer l'extension si nécessaire
                 if (!obstacle1.IsDoorOpen)
@@ -424,7 +436,6 @@ namespace DIMEN
 
                 DrawPlane(planePosition, planeSize, Color.DarkGray);
                 DrawModel(player1.Model, player1.Position, 1, Color.White);
-                
 
                 foreach (Obstacle obstacle in obstacles)
                 {
@@ -438,19 +449,17 @@ namespace DIMEN
                     DrawModel(mvCube.Model, mvCube.Position, 1, Color.White);
                 }
 
-                foreach (PressurePlate plaque in plaques)
+                foreach (PressurePlate plate in plates)
                 {
-                    if (plaque.IsPressed)
+                    if (plate.IsPressed)
                     {
-                        DrawModelEx(plaque.PressedModel, plaque.Position, Vector3.One, 0f, plaque.Scale, Color.White);
+                        DrawModelEx(plate.PressedModel, plate.Position, Vector3.One, 0f, plate.Scale, Color.White);
                     }
                     else
                     {
-                        DrawModelEx(plaque.Model, plaque.Position, Vector3.One, 0f, plaque.Scale, Color.White);
+                        DrawModelEx(plate.Model, plate.Position, Vector3.One, 0f, plate.Scale, Color.White);
                     }
-                    
                 }
-
                 if (player1.HasKey && !player1.HasUsedKey)
                 {
                     // Vérification de la collision uniquement si la porte n'est pas déjà ouverte
@@ -488,15 +497,15 @@ namespace DIMEN
                         DrawModel(keyModel, keyPosition, 1, Color.White);
                     }
                 }
-                
-
-                //DrawBoundingBox(finishLevelBox, Color.Green);
-                DrawBoundingBox(movableCube1.Box, Color.Blue);
-                DrawBoundingBox(player1.Box, Color.Red);
 
                 //DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
 
                 EndMode3D();
+
+                if(keyCanAppear)
+                {
+                    DrawText("Une clé est apparue", 30, 30, 30, Color.White);
+                }
 
                 // Calculer la position de la barre
                 int barWidth = 400; // Largeur de la barre
@@ -504,12 +513,9 @@ namespace DIMEN
                 int barX = (screenWidth - barWidth) / 2; // Centrer la barre horizontalement
                 int barY = screenHeight - barHeight - 60; // Positionner la barre en bas
 
-
                 // Dessiner la barre de cooldown (la partie remplie)
                 DrawRectangle(barX, barY, (int)(barWidth * cooldown.Progress), barHeight, Color.White);
-                DrawText(bothPlatesPressed.ToString(), 30, 30 ,30 , Color.White);
                 EndDrawing();        
-
             }
             static unsafe void InitModels(Model model, PBRMaterial material)
             {
@@ -522,63 +528,42 @@ namespace DIMEN
                     model.Materials[0] = material.Material;
                 }
             }
-            static unsafe bool PressurePlate(Player player, MovableCube mvCube, PressurePlate plaque1, PressurePlate plaque2)
+            static unsafe bool PressurePlate(List<MovableCube> mvCubes, List<PressurePlate> plaques)
             {
-                // Ajouter une variable pour stocker l'état précédent
-                bool previousStatePlaque1 = plaque1.IsPressed;
-                bool previousStatePlaque2 = plaque2.IsPressed;
+                bool allPressed = true;
 
-                if (CheckCollisionBoxes(player.Box, plaque1.PressBox))
+                foreach (PressurePlate plate in plaques)
                 {
-                    plaque1.IsPressed = true;
+                    bool previousState = plate.IsPressed;
+                    plate.IsPressed = false; // Reset avant de vérifier les collisions
+
+                    // Vérifier si le cube assigné peut appuyer sur cette plaque
+                    if (plate.PressableBy != null && CheckCollisionBoxes(plate.PressableBy.Box, plate.PressBox))
+                    {
+                        plate.IsPressed = true;
+                    }
 
                     // Jouer le son uniquement si l'état change
-                    if (!previousStatePlaque1)
+                    if (plate.IsPressed && !previousState)
                     {
                         PlaySound(pressureClick);
                     }
-                }
-                else
-                {
-                    plaque1.IsPressed = false;
-
-                    // Jouer le son uniquement si l'état change
-                    if (previousStatePlaque1)
+                    else if (!plate.IsPressed && previousState)
                     {
                         PlaySound(pressureUnclick);
                     }
-                }
 
-
-                if (CheckCollisionBoxes(mvCube.Box, plaque2.PressBox))
-                {
-                    plaque2.IsPressed = true;
-
-                    // Jouer le son uniquement si l'état change
-                    if (!previousStatePlaque2)
+                    // Si une seule plate n'est pas pressée, on retourne false
+                    if (!plate.IsPressed)
                     {
-                        PlaySound(pressureClick);
+                        allPressed = false;
                     }
                 }
-                else
-                {
-                    plaque2.IsPressed = false;
 
-                    // Jouer le son uniquement si l'état change
-                    if (previousStatePlaque2)
-                    {
-                        PlaySound(pressureUnclick);
-                    }
-                }
-                if(previousStatePlaque1 && previousStatePlaque2)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return allPressed;
             }
+
+
             // Déchargement des ressources
             CloseWindow();
         }

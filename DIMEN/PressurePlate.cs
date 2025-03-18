@@ -16,9 +16,14 @@ namespace DIMEN
         public BoundingBox PressBox;
         public Vector3 HalfSize;
         public bool IsPressed;
+        public float OriginalMaxY;
         public readonly Vector3 Scale;
-        public PressurePlate(string pressedModelPath, string unpressedModelPath, string materialPath, Vector3 dimensions, Vector3 position)
+        public MovableCube PressableBy;
+        public PressurePlate(string pressedModelPath, string unpressedModelPath, string materialPath, Vector3 dimensions, Vector3 position, MovableCube pressableBy)
         {
+            // Qui peut presser la plaque
+            PressableBy = pressableBy;
+
             // Charger les modèles
             Model = LoadModel(unpressedModelPath);
             PressedModel = LoadModel(pressedModelPath);
@@ -51,8 +56,10 @@ namespace DIMEN
             Vector3 scaledMax = rawModelBox.Max * Scale;
             Box = new BoundingBox(Position + scaledMin, Position + scaledMax);
 
+            OriginalMaxY = Box.Max.Y;
+
             // Ajustement de la bounding box de pression (plus petite)
-            Vector3 pressOffset = new Vector3(0.2f, 0.05f, 0.2f);
+            Vector3 pressOffset = new Vector3(0.2f, 0.0025f, 0.2f);
             PressBox = new BoundingBox(Box.Min + pressOffset, Box.Max - pressOffset);
         }
 

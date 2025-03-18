@@ -29,7 +29,7 @@ namespace DIMEN
             Friction = 0.15f;
             Speed = 5.0f;
         }
-        public void Update(float deltaTime, Player player, List<MovableCube> movable)
+        public void Update(float deltaTime, Player player, List<MovableCube> movableCubes)
         {
             float gravity = -18;
 
@@ -48,7 +48,7 @@ namespace DIMEN
                 Velocity.Y = gravity;
             }
 
-            HandlePush(player); // Appliquer la poussée du joueur
+            HandlePush(player, movableCubes); // Appliquer la poussée du joueur
 
             Brake(); // Appliquer le freinage pour éviter les mouvements infinis
 
@@ -162,18 +162,45 @@ namespace DIMEN
                 }
             }
         }
-        public void HandlePush(Player player)
+        public void HandlePush(Player player, List<MovableCube> movableCubes)
         {
+            // Vérifier la collision entre le joueur et le bloc (cube)
             if (CheckCollisionBoxes(Box, player.Box))
             {
-                // Direction du joueur
+                // Direction du mouvement du joueur (X et Z pour 2D, ou Y, Z pour 3D si nécessaire)
                 Vector3 pushDirection = new Vector3(player.Velocity.X, 0, player.Velocity.Z);
 
-                // Si le joueur bouge, on applique la poussée
+                // Si le joueur bouge (a une vitesse non nulle), on applique la poussée
                 if (pushDirection != Vector3.Zero)
                 {
-                    pushDirection = Raymath.Vector3Normalize(pushDirection); // Normaliser
-                    Velocity += pushDirection * 2.0f; // Appliquer une poussée au cube
+                    pushDirection = Raymath.Vector3Normalize(pushDirection); // Normaliser la direction
+                    Velocity += pushDirection * 2.0f; // Appliquer une poussée au bloc
+                }
+            }
+
+            // Vérifier les collisions entre deux blocs (pour qu'ils puissent aussi se pousser mutuellement)
+            foreach (MovableCube otherCube in movableCubes) // "movableCubes" représente tous les blocs présents dans ton jeu
+            {
+                if (otherCube != this && CheckCollisionBoxes(Box, otherCube.Box))
+                {
+                    // Calculer le centre des deux blocs en utilisant les coordonnées min et max du BoundingBox
+                    Vector3 thisBlockCenter = new Vector3((Box.Min.X + Box.Max.X) / 2, (Box.Min.Y + Box.Max.Y) / 2, (Box.Min.Z + Box.Max.Z) / 2);
+                    Vector3 otherBlockCenter = new Vector3((otherCube.Box.Min.X + otherCube.Box.Max.X) / 2,
+                                                           (otherCube.Box.Min.Y + otherCube.Box.Max.Y) / 2,
+                                                           (otherCube.Box.Min.Z + otherCube.Box.Max.Z) / 2);
+
+                    // Calculer la direction de la poussée entre les deux blocs
+                    Vector3 direction = thisBlockCenter - otherBlockCenter;
+
+                    // Normaliser la direction de la collision
+                    if (direction != Vector3.Zero)
+                    {
+                        direction = Raymath.Vector3Normalize(direction);
+
+                        // Appliquer une poussée sur le bloc en fonction de la direction
+                        Velocity += direction * 2.0f; // Ajuste la vitesse de poussée des blocs selon ton besoin
+                        otherCube.Velocity -= direction * 2.0f; // Réduire la vitesse de l'autre bloc
+                    }
                 }
             }
         }

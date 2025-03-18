@@ -174,6 +174,7 @@ namespace DIMEN
             float currentRotationAngle = 0f;
             float rotationSpeed = 5f;
             float keyRotationAngle = 0.0f;
+            bool keyCanAppear = false;
 
             const float GRIDLEVEL = -3f;
             float groundLevel = GRIDLEVEL;
@@ -188,7 +189,7 @@ namespace DIMEN
 
             Obstacle obstacle1 = new(
                 "assets/textures/default/",
-                "assets/textures/metal/door/",
+                "assets/textures/metal/blue/",
                 "assets/objects/obstacles/Obstacle_hole.obj",
                 new Vector3(11), // Position centrale
                 new Vector3(0),
@@ -231,23 +232,31 @@ namespace DIMEN
             PressurePlate plaque1 = new(
                 "assets/objects/pressure_plate/pressed.obj",
                 "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/default/",
+                "assets/textures/metal/red/",
                 new Vector3(3, 0.3f, 3),
                 new Vector3(10, groundLevel, 10)
             );
             PressurePlate plaque2 = new(
                 "assets/objects/pressure_plate/pressed.obj",
                 "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/default/",
+                "assets/textures/metal/blue/",
                 new Vector3(3, 0.3f, 3),
                 new Vector3(obstacle1.Position.X, obstacle1.Position.Y + obstacle1.Dimensions.Y / 2, obstacle1.Position.Z)
             );
 
             Player player1 = new(
-                "assets/textures/metal/player/",
+                "assets/textures/metal/red/",
                 "assets/objects/Cube.obj",
                 new Vector3(1),
                 groundLevel
+            );
+
+            MovableCube movableCube1 = new(
+                "assets/textures/metal/blue/",
+                "assets/objects/Cube.obj",
+                new Vector3(1),
+                groundLevel
+
             );
 
             Vector3 keyDimensions = new Vector3(0.5f, 1f, 0.5f);
@@ -258,10 +267,13 @@ namespace DIMEN
             BoundingBox wall1 = new BoundingBox();
             BoundingBox wall2 = new BoundingBox();
 
+
+            List<MovableCube> movableCubes = new List<MovableCube> { movableCube1 };
             List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5 };
             List<PressurePlate> plaques = new List<PressurePlate> { plaque1, plaque2 };
 
             player1.Position = new Vector3(0, groundLevel, 30);
+            movableCube1.Position = new Vector3(plaque1.Position.X, 80, plaque1.Position.Z);
 
             PlayMusicStream(backgroundMusic);
             SetMusicVolume(backgroundMusic, 0.1f);
@@ -303,21 +315,16 @@ namespace DIMEN
                 {
                     cooldown.ToggleView();
                 }
-                if (!player1.HasKey)
-                {
-                    Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
-                    keyModel.Transform = rotationMatrix;
-
-                    if (CheckCollisionBoxes(keyBox, player1.Box) && !cooldown.IsTopView)
-                    {
-                        player1.HasKey = true;
-                        PlaySound(pickUpKeySound);
-                    }
-                }
+                
 
                 UpdateMusicStream(backgroundMusic);
                 dimensionCamera.UpdateCamera(deltaTime);
                 player1.Update(moveDirection, strafeDirection, deltaTime);
+
+                movableCube1.Update(deltaTime, player1);
+                movableCube1.HandleCollision(obstacles, cooldown.IsTopView);
+                movableCube1.HandlePlate(plaques, cooldown.IsTopView);
+
                 cooldown.Update(deltaTime);
 
                 if (cooldown.IsTopView)
@@ -357,29 +364,24 @@ namespace DIMEN
                     obstacle1.DoorExtended = true;
                 }
 
-                foreach(PressurePlate plaque in plaques)
+                bool bothPlatesPressed = PressurePlate(player1, movableCube1, plaque1, plaque2);
+
+                if (bothPlatesPressed)
                 {
-                    // Ajouter une variable pour stocker l'état précédent
-                    bool previousState = plaque.IsPressed;
+                    keyCanAppear = true;
+                }
 
-                    if (CheckCollisionBoxes(player1.Box, plaque.PressBox))
+                if (keyCanAppear)
+                {
+                    if (!player1.HasKey)
                     {
-                        plaque.IsPressed = true;
+                        Matrix4x4 rotationMatrix = Raymath.MatrixRotateY(keyRotationAngle * DEG2RAD);
+                        keyModel.Transform = rotationMatrix;
 
-                        // Jouer le son uniquement si l'état change
-                        if (!previousState)
+                        if (CheckCollisionBoxes(player1.Box, keyBox) && !cooldown.IsTopView)
                         {
-                            PlaySound(pressureClick);
-                        }
-                    }
-                    else
-                    {
-                        plaque.IsPressed = false;
-
-                        // Jouer le son uniquement si l'état change
-                        if (previousState)
-                        {
-                            PlaySound(pressureUnclick);
+                            player1.HasKey = true;
+                            PlaySound(pickUpKeySound);
                         }
                     }
                 }
@@ -422,12 +424,20 @@ namespace DIMEN
 
                 DrawPlane(planePosition, planeSize, Color.DarkGray);
                 DrawModel(player1.Model, player1.Position, 1, Color.White);
+                
 
                 foreach (Obstacle obstacle in obstacles)
                 {
                     // Utiliser DrawModelEx pour appliquer l'échelle, la position, et potentiellement la rotation
                     DrawModelEx(obstacle.Model, obstacle.Position, Vector3.One, 0f, obstacle.Scale, Color.White);
                 }
+
+                foreach (MovableCube mvCube in movableCubes)
+                {
+                    // Utiliser DrawModelEx pour appliquer l'échelle, la position, et potentiellement la rotation
+                    DrawModel(mvCube.Model, mvCube.Position, 1, Color.White);
+                }
+
                 foreach (PressurePlate plaque in plaques)
                 {
                     if (plaque.IsPressed)
@@ -470,18 +480,19 @@ namespace DIMEN
                     DrawModelEx(obstacle1.ClosedDoorModel, obstacle1.DoorPosition, Vector3.Zero, 0, new Vector3(1), Color.White);
                 }
 
-                // Dessiner la clé au sol si elle n'a pas été ramassée
-                if (!player1.HasKey)
+                if (keyCanAppear)
                 {
-                    DrawModel(keyModel, keyPosition, 1, Color.White);
+                    // Dessiner la clé au sol si elle n'a pas été ramassée
+                    if (!player1.HasKey)
+                    {
+                        DrawModel(keyModel, keyPosition, 1, Color.White);
+                    }
                 }
+                
 
-                DrawBoundingBox(finishLevelBox, Color.Green);
-                DrawBoundingBox(obstacle1.Box, Color.Blue);
-                DrawBoundingBox(plaque1.Box, Color.Green);
-                DrawBoundingBox(plaque1.PressBox, Color.Red);
-                DrawBoundingBox(plaque2.Box, Color.Green);
-                DrawBoundingBox(plaque2.PressBox, Color.Red);
+                //DrawBoundingBox(finishLevelBox, Color.Green);
+                DrawBoundingBox(movableCube1.Box, Color.Blue);
+                DrawBoundingBox(player1.Box, Color.Red);
 
                 //DrawSphere(Shaders.Light1.Position, 1.0f, Color.Orange);
 
@@ -496,7 +507,7 @@ namespace DIMEN
 
                 // Dessiner la barre de cooldown (la partie remplie)
                 DrawRectangle(barX, barY, (int)(barWidth * cooldown.Progress), barHeight, Color.White);
-                DrawText(player1.Velocity.ToString(), 30, 30 ,30 , Color.White);
+                DrawText(bothPlatesPressed.ToString(), 30, 30 ,30 , Color.White);
                 EndDrawing();        
 
             }
@@ -511,7 +522,63 @@ namespace DIMEN
                     model.Materials[0] = material.Material;
                 }
             }
+            static unsafe bool PressurePlate(Player player, MovableCube mvCube, PressurePlate plaque1, PressurePlate plaque2)
+            {
+                // Ajouter une variable pour stocker l'état précédent
+                bool previousStatePlaque1 = plaque1.IsPressed;
+                bool previousStatePlaque2 = plaque2.IsPressed;
 
+                if (CheckCollisionBoxes(player.Box, plaque1.PressBox))
+                {
+                    plaque1.IsPressed = true;
+
+                    // Jouer le son uniquement si l'état change
+                    if (!previousStatePlaque1)
+                    {
+                        PlaySound(pressureClick);
+                    }
+                }
+                else
+                {
+                    plaque1.IsPressed = false;
+
+                    // Jouer le son uniquement si l'état change
+                    if (previousStatePlaque1)
+                    {
+                        PlaySound(pressureUnclick);
+                    }
+                }
+
+
+                if (CheckCollisionBoxes(mvCube.Box, plaque2.PressBox))
+                {
+                    plaque2.IsPressed = true;
+
+                    // Jouer le son uniquement si l'état change
+                    if (!previousStatePlaque2)
+                    {
+                        PlaySound(pressureClick);
+                    }
+                }
+                else
+                {
+                    plaque2.IsPressed = false;
+
+                    // Jouer le son uniquement si l'état change
+                    if (previousStatePlaque2)
+                    {
+                        PlaySound(pressureUnclick);
+                    }
+                }
+                if(previousStatePlaque1 && previousStatePlaque2)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
             // Déchargement des ressources
             CloseWindow();
         }

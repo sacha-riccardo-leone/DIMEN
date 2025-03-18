@@ -16,21 +16,19 @@ namespace DIMEN
         public bool HasKey;
         public bool HasUsedKey;
         public float GroundLevel { get; private set; }
-        public bool IsFalling;
         public float Speed;
-        public Player(string playerMaterialPath, string playerModelPath, Vector3 playerDimensions, float groundLevel)
+        public Player(string materialPath, string modelPath, Vector3 dimensions, float groundLevel)
         {
-            Material = new PBRMaterial (playerMaterialPath);
-            Model = LoadModel(playerModelPath);
+            Material = new PBRMaterial (materialPath);
+            Model = LoadModel(modelPath);
             InitModels(Model, Material);
 
-            Dimensions = playerDimensions;
+            Dimensions = dimensions;
             Position = new Vector3 (-10, groundLevel,0);
             Box = new BoundingBox(Position + Dimensions/2, Position + Dimensions/2);
             GroundLevel = groundLevel + 0.5f;
             Velocity = Vector3.Zero;
             Friction = 0.15f;
-            IsFalling = false;
             Speed = 5.0f;
 }
         public void Update(Vector3 moveDirection, Vector3 strafeDirection, float deltaTime)
@@ -80,6 +78,7 @@ namespace DIMEN
                 new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f),
                 new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f)
             );
+
         }
         private void Brake()
         {
@@ -207,7 +206,6 @@ namespace DIMEN
                 }
             }
         }
-
         public unsafe void InitModels(Model model, PBRMaterial material)
         {
             for (int i = 0; i < model.MeshCount; i++)

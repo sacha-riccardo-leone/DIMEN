@@ -17,14 +17,14 @@ namespace DIMEN
         public Vector3 HalfSize;
         public bool IsPressed;
         public readonly Vector3 Scale;
-        public PressurePlate(string pressedModelPath, string unpressedModelPath, string plateMaterialPath, Vector3 dimensions, Vector3 position)
+        public PressurePlate(string pressedModelPath, string unpressedModelPath, string materialPath, Vector3 dimensions, Vector3 position)
         {
             // Charger les modèles
             Model = LoadModel(unpressedModelPath);
             PressedModel = LoadModel(pressedModelPath);
 
             // Charger le matériau et l'appliquer aux modèles
-            Material = new PBRMaterial(plateMaterialPath);
+            Material = new PBRMaterial(materialPath);
             InitModels(Model, Material);
             InitModels(PressedModel, Material);
 

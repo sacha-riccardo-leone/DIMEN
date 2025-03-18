@@ -25,11 +25,11 @@ namespace DIMEN
         public bool DoorExtended;
         public readonly Vector3 Scale;
 
-        public Obstacle(string obstacleMaterialPath, string doorMaterialPath, string obstacleModelPath, Vector3 dimensions, Vector3 position, Vector3 doorDimensions, string openDoorModelPath, string closedDoorModelPath, float groundLevel)
+        public Obstacle(string materialPath, string doorMaterialPath, string modelPath, Vector3 dimensions, Vector3 position, Vector3 doorDimensions, string openDoorModelPath, string closedDoorModelPath, float groundLevel)
         {
-            Material = new PBRMaterial(obstacleMaterialPath);
+            Material = new PBRMaterial(materialPath);
             DoorMaterial = new PBRMaterial(doorMaterialPath);
-            Model = LoadModel(obstacleModelPath);
+            Model = LoadModel(modelPath);
             OpenDoorModel = LoadModel(openDoorModelPath);
             ClosedDoorModel = LoadModel(closedDoorModelPath);
 

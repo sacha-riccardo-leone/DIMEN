@@ -191,7 +191,7 @@ namespace DIMEN
             Vector3 colliderObstacleDimension = new Vector3(16) / 2;
 
             Obstacle obstacle1 = new(
-                "assets/textures/default/",
+                "assets/textures/default/grey/",
                 "assets/textures/metal/yellow/",
                 "assets/objects/obstacles/Obstacle_hole.obj",
                 new Vector3(11), // Position centrale
@@ -203,7 +203,7 @@ namespace DIMEN
             );
 
             Obstacle obstacle2 = new(
-                "assets/textures/default/",
+                "assets/textures/default/grey/",
                 "assets/objects/obstacles/Obstacle.obj",
                 new Vector3(2, 30, 2), // Taille de l'obstacle
                 new Vector3(-10, 0, 0), // Position à gauche de obstacle1
@@ -211,14 +211,14 @@ namespace DIMEN
             );
 
             Obstacle obstacle3 = new(
-                "assets/textures/default/",
+                "assets/textures/default/grey/",
                 "assets/objects/obstacles/Obstacle.obj",
                 new Vector3(2, 30, 2), // Taille de l'obstacle
                 new Vector3(10, 0, 0), // Position à droite de obstacle1
                 groundLevel
             );
             Obstacle obstacle5 = new(
-                "assets/textures/default/",
+                "assets/textures/default/grey/",
                 "assets/objects/obstacles/Obstacle.obj",
                 new Vector3(2, 30, 2), // Taille de l'obstacle
                 new Vector3(0, 0, 10), // Position à droite de obstacle1
@@ -233,13 +233,13 @@ namespace DIMEN
             );
 
             MovableCube movableCube1 = new(
-                "assets/textures/metal/red/",
+                "assets/textures/default/red/",
                 "assets/objects/Cube.obj",
                 new Vector3(1),
                 groundLevel
             );
             MovableCube movableCube2 = new(
-                "assets/textures/metal/blue/",
+                "assets/textures/default/blue/",
                 "assets/objects/Cube.obj",
                 new Vector3(1),
                 groundLevel
@@ -248,7 +248,7 @@ namespace DIMEN
             PressurePlate plate1 = new(
                 "assets/objects/pressure_plate/pressed.obj",
                 "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/metal/red/",
+                "assets/textures/default/red/",
                 new Vector3(3, 0.3f, 3),
                 new Vector3(10, groundLevel, 10),
                 movableCube1
@@ -256,7 +256,7 @@ namespace DIMEN
             PressurePlate plate2 = new(
                 "assets/objects/pressure_plate/pressed.obj",
                 "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/metal/blue/",
+                "assets/textures/default/blue/",
                 new Vector3(3, 0.3f, 3),
                 new Vector3(obstacle1.Position.X, obstacle1.Position.Y + obstacle1.Dimensions.Y / 2, obstacle1.Position.Z),
                 movableCube2
@@ -278,11 +278,8 @@ namespace DIMEN
             List<PressurePlate> plates = new List<PressurePlate> { plate1, plate2 };
 
             player1.Position = new Vector3(0, groundLevel, 20);
-            //movableCube1.Position = new Vector3(obstacle1.Position.X, 100, obstacle1.Position.Z);
-            //movableCube2.Position = new Vector3(obstacle3.Position.X, 200, obstacle3.Position.Z);
-            
-            movableCube1.Position = new Vector3(0, groundLevel, 25);
-            movableCube2.Position = new Vector3(0, groundLevel, 30);
+            movableCube1.Position = new Vector3(obstacle1.Position.X, 100, obstacle1.Position.Z);
+            movableCube2.Position = new Vector3(obstacle3.Position.X, 200, obstacle3.Position.Z);
 
             PlayMusicStream(backgroundMusic);
             SetMusicVolume(backgroundMusic, 0.1f);
@@ -399,23 +396,23 @@ namespace DIMEN
                         }
                     }
                 }
-                if (!CheckCollisionBoxes(player1.Box, hallway))
-                {
-                    player1.HandleCollision(obstacles, cooldown.IsTopView);
-                    player1.HandlePlate(plates);
-                }
-                else
+                if (CheckCollisionBoxes(player1.Box, hallway))
                 {
                     List<BoundingBox> walls = new List<BoundingBox> { wall1, wall2 };
-                    if(!cooldown.IsTopView)
+                    if (!cooldown.IsTopView)
                     {
                         player1.HandleHallway(walls);
                     }
-                    else 
+                    else
                     {
                         player1.HandleCollision(obstacles, cooldown.IsTopView);
                         player1.HandlePlate(plates);
-                    }    
+                    }
+                }
+                else
+                {
+                    player1.HandleCollision(obstacles, cooldown.IsTopView);
+                    player1.HandlePlate(plates); 
                 }
                 // Réinitialiser doorExtended lorsque la porte se ferme pour réappliquer l'extension si nécessaire
                 if (!obstacle1.IsDoorOpen)

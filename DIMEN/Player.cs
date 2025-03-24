@@ -186,15 +186,7 @@ namespace DIMEN
                     {
                         plaque.Box.Max.Y = plaque.OriginalMaxY; // Remet la hauteur initiale
                     }
-
-                    float deltaX = Position.X - plaque.Position.X;
-                    float deltaZ = Position.Z - plaque.Position.Z;
-                    float deltaY = Position.Y - plaque.Position.Y;
-
-                    float overlapX = (Box.Max.X - Box.Min.X) / 2 + (plaque.Box.Max.X - plaque.Box.Min.X) / 2 - Math.Abs(deltaX);
-                    float overlapZ = (Box.Max.Z - Box.Min.Z) / 2 + (plaque.Box.Max.Z - plaque.Box.Min.Z) / 2 - Math.Abs(deltaZ);
-                    float overlapY = (Box.Max.Y - Box.Min.Y) / 2 + (plaque.Box.Max.Y - plaque.Box.Min.Y) / 2 - Math.Abs(deltaY);
-
+                   
                     if (CheckCollisionBoxes(Box, plaque.PressBox))
                     {
                         Position.Y = plaque.Box.Max.Y + Dimensions.Y / 2;
@@ -202,16 +194,6 @@ namespace DIMEN
 
                     Position.Y = plaque.Box.Max.Y + Dimensions.Y / 2;
                     Velocity.Y = 0; // Stoppe la gravité
-
-                    // Résolution de la collision
-                    if (overlapX < overlapZ && overlapX < overlapY)
-                    {
-                        Position.X += deltaX > 0 ? overlapX : -overlapX;
-                    }
-                    else if (overlapZ < overlapX && overlapZ < overlapY)
-                    {
-                        Position.Z += deltaZ > 0 ? overlapZ : -overlapZ;
-                    }
                     break;
                 }
             }

@@ -169,6 +169,19 @@ namespace DIMEN
 
             SetMasterVolume(100);
 
+            // Chemin des "Materials"
+            string defaultGrey = "assets/textures/default/grey/";
+            string defaultBlue = "assets/textures/default/blue/";
+            string defaultred = "assets/textures/default/red/";
+            string metalGrey = "assets/textures/default/grey/";
+            string metalYellow = "assets/textures/metal/yellow/";
+
+            // Chemin des objets 3D
+            string obstacleObject = "assets/objects/obstacles/Obstacle.obj";
+            string cubeObject = "assets/objects/Cube.obj";
+            string pressedPlateObject = "assets/objects/pressure_plate/pressed.obj";
+            string unpressedPlateObject = "assets/objects/pressure_plate/unpressed.obj";
+
             Vector2 planeSize = new Vector2(1000, 1000);
 
             // Variables pour la gestion du mouvement et de la rotation
@@ -191,8 +204,8 @@ namespace DIMEN
             Vector3 colliderObstacleDimension = new Vector3(16) / 2;
 
             Obstacle obstacle1 = new(
-                "assets/textures/default/grey/",
-                "assets/textures/metal/yellow/",
+                defaultGrey,
+                metalYellow,
                 "assets/objects/obstacles/Obstacle_hole.obj",
                 new Vector3(11), // Position centrale
                 new Vector3(0),
@@ -203,60 +216,60 @@ namespace DIMEN
             );
 
             Obstacle obstacle2 = new(
-                "assets/textures/default/grey/",
-                "assets/objects/obstacles/Obstacle.obj",
+                defaultGrey,
+                obstacleObject,
                 new Vector3(2, 30, 2), // Taille de l'obstacle
                 new Vector3(-10, 0, 0), // Position à gauche de obstacle1
                 groundLevel
             );
 
             Obstacle obstacle3 = new(
-                "assets/textures/default/grey/",
-                "assets/objects/obstacles/Obstacle.obj",
+                defaultGrey,
+                obstacleObject,
                 new Vector3(2, 30, 2), // Taille de l'obstacle
                 new Vector3(10, 0, 0), // Position à droite de obstacle1
                 groundLevel
             );
             Obstacle obstacle5 = new(
-                "assets/textures/default/grey/",
-                "assets/objects/obstacles/Obstacle.obj",
+                defaultGrey,
+                obstacleObject,
                 new Vector3(2, 30, 2), // Taille de l'obstacle
                 new Vector3(0, 0, 10), // Position à droite de obstacle1
                 groundLevel
             );
 
             Player player1 = new(
-                "assets/textures/metal/grey/",
-                "assets/objects/Cube.obj",
+                metalGrey,
+                cubeObject,
                 new Vector3(1),
                 groundLevel
             );
 
             MovableCube movableCube1 = new(
-                "assets/textures/default/red/",
-                "assets/objects/Cube.obj",
+                defaultred,
+                cubeObject,
                 new Vector3(1),
                 groundLevel
             );
             MovableCube movableCube2 = new(
-                "assets/textures/default/blue/",
-                "assets/objects/Cube.obj",
+                defaultBlue,
+                cubeObject,
                 new Vector3(1),
                 groundLevel
             );
 
             PressurePlate plate1 = new(
-                "assets/objects/pressure_plate/pressed.obj",
-                "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/default/red/",
+                pressedPlateObject,
+                unpressedPlateObject,
+                defaultred,
                 new Vector3(3, 0.3f, 3),
                 new Vector3(10, groundLevel, 10),
                 movableCube1
             );
             PressurePlate plate2 = new(
-                "assets/objects/pressure_plate/pressed.obj",
-                "assets/objects/pressure_plate/unpressed.obj",
-                "assets/textures/default/blue/",
+                pressedPlateObject,
+                unpressedPlateObject,
+                defaultBlue,
                 new Vector3(3, 0.3f, 3),
                 new Vector3(obstacle1.Position.X, obstacle1.Position.Y + obstacle1.Dimensions.Y / 2, obstacle1.Position.Z),
                 movableCube2
@@ -286,6 +299,10 @@ namespace DIMEN
 
             while (currentState == GameState.Playing)
             {
+                if(IsKeyPressed(KeyboardKey.Escape))
+                {
+                    currentState = GameState.Menu;
+                }
                 Shaders.UpdatePBRLighting(dimensionCamera.Camera.Position);
                 float deltaTime = GetFrameTime();
 
@@ -344,7 +361,7 @@ namespace DIMEN
                     dimensionCamera.DefaultPosition(); // Revenir à la vue par défaut
                 }
 
-                if (!cooldown.IsTopView && obstacle1.IsDoorOpen && !obstacle1.DoorExtended)
+                if (obstacle1.IsDoorOpen && !obstacle1.DoorExtended)
                 {
                     float extension = 7f;
                     float reduction = 0.1f; // Ajuste cette valeur selon le besoin

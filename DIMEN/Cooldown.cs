@@ -1,7 +1,4 @@
-﻿using Raylib_cs;
-using static Raylib_cs.Raylib;
-
-namespace DIMEN
+﻿namespace DIMEN
 {
     class Cooldown
     {

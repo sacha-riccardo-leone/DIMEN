@@ -12,6 +12,7 @@ namespace DIMEN
         public Vector3 Dimensions;
         public Vector3 Position;
         public BoundingBox Box;
+        public BoundingBox OriginalBox;
         public Vector3 Center;
         public Vector3 HalfSize;
         public Vector3 DoorPosition;
@@ -20,6 +21,7 @@ namespace DIMEN
         public Model ClosedDoorModel;
         public BoundingBox DoorBox;
         public float GroundLevel;
+        public bool IsFloating;
         public bool IsDoorOpen;
         public bool DoorExtended;
         public readonly Vector3 Scale;
@@ -41,13 +43,16 @@ namespace DIMEN
             DoorDimensions = doorDimensions;
             GroundLevel = groundLevel;
             IsDoorOpen = false;
+            IsFloating = false;
             DoorExtended = false;
 
             // Ajustement de la hauteur de l'obstacle
             Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
             Center = Position;
             HalfSize = Dimensions / 2;
-            Box = new BoundingBox(Position - HalfSize, Position + HalfSize);
+            OriginalBox = new BoundingBox(Position - HalfSize, Position + HalfSize);
+            Box = OriginalBox;
+
             // Ajustement de la hauteur de la porte
             DoorPosition = new Vector3(
                 Center.X,
@@ -69,7 +74,7 @@ namespace DIMEN
             SetModelScale(ClosedDoorModel, scale);
         }
         // Obstacle sans porte
-        public Obstacle(string obstacleMaterialPath,string obstacleModelPath, Vector3 dimensions, Vector3 position,   float groundLevel)
+        public Obstacle(string obstacleMaterialPath, string obstacleModelPath, Vector3 dimensions, Vector3 position, float groundLevel, bool isFloating)
         {
             Material = new PBRMaterial(obstacleMaterialPath);
             Model = LoadModel(obstacleModelPath);
@@ -81,11 +86,22 @@ namespace DIMEN
             Dimensions = dimensions;
             GroundLevel = groundLevel;
             IsDoorOpen = false;
-            // Ajustement de la hauteur de l'obstacle
-            Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
+            IsFloating = isFloating;
+
+            if (isFloating)
+            {
+                // Ajustement de la hauteur de l'obstacle
+                Position = position;
+            }
+            else
+            {
+                // Ajustement de la hauteur de l'obstacle
+                Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
+            }
             Center = Position;
             HalfSize = Dimensions / 2;
-            Box = new BoundingBox(Position - HalfSize, Position + HalfSize);
+            OriginalBox = new BoundingBox(Position - HalfSize, Position + HalfSize);
+            Box = OriginalBox;
 
             // Calcul de la taille du modèle
             BoundingBox tempBox = GetModelBoundingBox(Model);
@@ -134,6 +150,5 @@ namespace DIMEN
                 }
             }
         }
-
     }
 }

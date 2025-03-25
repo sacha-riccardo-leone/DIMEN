@@ -219,42 +219,49 @@ namespace DIMEN
                 obstacleObject,
                 new Vector3(2, 30, 2),
                 new Vector3(-10, 0, 0),
-                groundLevel
+                groundLevel,
+                false
             );
             Obstacle obstacle3 = new(
                 defaultGrey,
                 obstacleObject,
                 new Vector3(2, 30, 2),
                 new Vector3(10, 0, 0),
-                groundLevel
+                groundLevel,
+                false
             );
             Obstacle obstacle4 = new(
                 defaultGrey,
                 obstacleObject,
-                new Vector3(2, 30, 2),
-                new Vector3(0, 0, 10),
-                groundLevel
+                new Vector3(3), 
+                new Vector3(15, 0, 0),
+                groundLevel,
+                false
             );
             Obstacle obstacle5 = new(
                 defaultGrey,
                 obstacleObject,
                 new Vector3(3), 
-                new Vector3(15, 0, 0),
-                groundLevel
-            );
+                new Vector3(-20, 0, 3),
+                groundLevel,
+                false
+            ); 
             Obstacle obstacle6 = new(
                 defaultGrey,
                 obstacleObject,
                 new Vector3(3), 
-                new Vector3(-20, 0, 3),
-                groundLevel
-            ); 
-            Obstacle obstacle7 = new(
+                new Vector3(-13, 0, -8),
+                groundLevel,
+                false
+            );
+
+            Obstacle floatingObstacle = new(
                 defaultGrey,
                 obstacleObject,
-                new Vector3(3), 
-                new Vector3(-13, 0, -8),
-                groundLevel
+                new Vector3(5), 
+                new Vector3(0, 10, -20),
+                groundLevel,
+                true
             );
 
             // Création des cubes déplaçables
@@ -277,7 +284,7 @@ namespace DIMEN
                 unpressedPlateObject,
                 defaultred,
                 new Vector3(3, 0.3f, 3),
-                new Vector3(10, groundLevel, 10),
+                new Vector3(0, groundLevel, 10),
                 movableCube1
             );
             PressurePlate plate2 = new(
@@ -307,19 +314,19 @@ namespace DIMEN
 
             // Listes d'objets
             List<MovableCube> movableCubes = new List<MovableCube> { movableCube1, movableCube2 };
-            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5, obstacle6, obstacle7 };
+            List<Obstacle> obstacles = new List<Obstacle> { obstacle1, obstacle2, obstacle3, obstacle4, obstacle5, obstacle6, floatingObstacle };
             List<PressurePlate> plates = new List<PressurePlate> { plate1, plate2 };
 
             // Positionnement du joueur et des cubes déplaçables
             player1.Position = new Vector3(0, groundLevel, 20);
-            movableCube1.Position = new Vector3(obstacle1.Position.X, 100, obstacle1.Position.Z);
-            movableCube2.Position = new Vector3(obstacle3.Position.X, 200, obstacle3.Position.Z);
+            movableCube1.Position = new Vector3(floatingObstacle.Position.X, 200, floatingObstacle.Position.Z);
+            movableCube2.Position = new Vector3(obstacle2.Position.X, 100, obstacle2.Position.Z);
 
             // Position de clé
-            float obstacle2Top = obstacle2.Position.Y + obstacle2.Dimensions.Y / 2 + keyDimensions.Y / 2;
-            keyPosition.Y = obstacle2Top;
-            keyPosition.X = obstacle2.Position.X;
-            keyPosition.Z = obstacle2.Position.Z;
+            float obstacle3Top = obstacle3.Position.Y + obstacle3.Dimensions.Y / 2 + keyDimensions.Y / 2;
+            keyPosition.Y = groundLevel + keyDimensions.Y/2;
+            keyPosition.X = obstacle6.Position.X - 2;
+            keyPosition.Z = obstacle6.Position.Z - 2;
 
             // Musique
             PlayMusicStream(backgroundMusic);
@@ -368,7 +375,8 @@ namespace DIMEN
                 {
                     cooldown.ToggleView();
                 }
-                
+
+
                 // Mettre à jour la caméra et le joueur
                 dimensionCamera.UpdateCamera(deltaTime);
                 player1.Update(moveDirection, strafeDirection, deltaTime);
@@ -383,6 +391,7 @@ namespace DIMEN
 
                 // Mettre à jour le temps de recharge
                 cooldown.Update(deltaTime);
+                EditBox();
 
                 if (cooldown.IsTopView)
                 {
@@ -495,6 +504,7 @@ namespace DIMEN
                 foreach (Obstacle obstacle in obstacles)
                 {
                     DrawModelEx(obstacle.Model, obstacle.Position, Vector3.One, 0f, obstacle.Scale, Color.White);
+                    //DrawBoundingBox(obstacle.Box, Color.Red);
                 }
 
                 foreach (MovableCube mvCube in movableCubes)
@@ -606,8 +616,30 @@ namespace DIMEN
 
                 return allPressed;
             }
+            unsafe void EditBox()
+            {
+                foreach (Obstacle obstacle in obstacles)
+                {
+                    if (obstacle.IsFloating && cooldown.IsTopView)
+                    {
+                        // Étendre la BoundingBox jusqu'au sol
+                        Vector3 min = new Vector3(
+                            obstacle.OriginalBox.Min.X,
+                            obstacle.GroundLevel,
+                            obstacle.OriginalBox.Min.Z
+                        );
+                        Vector3 max = obstacle.OriginalBox.Max;
+                        obstacle.Box = new BoundingBox(min, max);
+                    }
+                    else
+                    {
+                        obstacle.Box = obstacle.OriginalBox;
+                    }
+                }  
+            }
             // Déchargement des ressources
             CloseWindow();
         }
+        
     }
 }

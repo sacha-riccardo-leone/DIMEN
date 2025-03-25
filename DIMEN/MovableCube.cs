@@ -20,7 +20,6 @@ namespace DIMEN
             Material = new PBRMaterial(materialPath);
             Model = LoadModel(modelPath);
             InitModels(Model, Material);
-
             Dimensions = dimensions;
             Position = new Vector3(-10, groundLevel, 0);
             Box = new BoundingBox(Position + Dimensions / 2, Position + Dimensions / 2);
@@ -122,15 +121,15 @@ namespace DIMEN
             {
                 if (CheckCollisionBoxes(Box, plaque.Box))
                 {
-                    float compressionAmount = 0.1f; // Hauteur de réduction
+                    float compressionAmount = 0.1f;
 
                     if (plaque.IsPressed)
                     {
-                        plaque.Box.Max.Y = plaque.OriginalMaxY - compressionAmount; // Réduit la hauteur
+                        plaque.Box.Max.Y = plaque.OriginalMaxY - compressionAmount;
                     }
                     else
                     {
-                        plaque.Box.Max.Y = plaque.OriginalMaxY; // Remet la hauteur initiale
+                        plaque.Box.Max.Y = plaque.OriginalMaxY;
                     }
                 
                     if (CheckCollisionBoxes(Box, plaque.PressBox))
@@ -139,29 +138,24 @@ namespace DIMEN
                     }
 
                     Position.Y = plaque.Box.Max.Y + Dimensions.Y / 2;
-                    Velocity.Y = 0; // Stoppe la gravité
+                    Velocity.Y = 0;
                     break;
                 }
             }
         }
         public void HandlePush(Player player, List<MovableCube> movableCubes)
         {
-            // Vérifier la collision entre le joueur et le bloc (cube)
             if (CheckCollisionBoxes(Box, player.Box))
             {
-                // Direction du mouvement du joueur (X et Z pour 2D, ou Y, Z pour 3D si nécessaire)
                 Vector3 pushDirection = new Vector3(player.Velocity.X, 0, player.Velocity.Z);
 
-                // Si le joueur bouge (a une vitesse non nulle), on applique la poussée
                 if (pushDirection != Vector3.Zero)
                 {
-                    pushDirection = Raymath.Vector3Normalize(pushDirection); // Normaliser la direction
-                    Velocity += pushDirection * 2.0f; // Appliquer une poussée au bloc
+                    pushDirection = Raymath.Vector3Normalize(pushDirection);
+                    Velocity += pushDirection * 2.0f;
                 }
             }
-
-            // Vérifier les collisions entre deux blocs (pour qu'ils puissent aussi se pousser mutuellement)
-            foreach (MovableCube otherCube in movableCubes) // "movableCubes" représente tous les blocs présents dans ton jeu
+            foreach (MovableCube otherCube in movableCubes) 
             {
                 if (otherCube != this && CheckCollisionBoxes(Box, otherCube.Box))
                 {
@@ -170,18 +164,15 @@ namespace DIMEN
                     Vector3 otherBlockCenter = new Vector3((otherCube.Box.Min.X + otherCube.Box.Max.X) / 2,
                                                            (otherCube.Box.Min.Y + otherCube.Box.Max.Y) / 2,
                                                            (otherCube.Box.Min.Z + otherCube.Box.Max.Z) / 2);
-
-                    // Calculer la direction de la poussée entre les deux blocs
                     Vector3 direction = thisBlockCenter - otherBlockCenter;
 
-                    // Normaliser la direction de la collision
                     if (direction != Vector3.Zero)
                     {
                         direction = Raymath.Vector3Normalize(direction);
 
                         // Appliquer une poussée sur le bloc en fonction de la direction
-                        Velocity += direction * 2.0f; // Ajuste la vitesse de poussée des blocs selon ton besoin
-                        otherCube.Velocity -= direction * 2.0f; // Réduire la vitesse de l'autre bloc
+                        Velocity += direction * 2.0f;
+                        otherCube.Velocity -= direction * 2.0f;
                     }
                 }
             }
@@ -195,6 +186,26 @@ namespace DIMEN
             if (model.MaterialCount > 0)
             {
                 model.Materials[0] = material.Material;
+            }
+        }
+        public unsafe void SetModelScale(Model model, Vector3 scale)
+        {
+            // Applique la mise à l'échelle sur chaque sommet du modèle
+            for (int i = 0; i < model.MeshCount; i++)
+            {
+                Mesh mesh = model.Meshes[i];
+                for (int j = 0; j < mesh.VertexCount; j++)
+                {
+                    // Calculer la nouvelle position de chaque sommet
+                    float x = mesh.Vertices[j * 3] * scale.X;
+                    float y = mesh.Vertices[j * 3 + 1] * scale.Y;
+                    float z = mesh.Vertices[j * 3 + 2] * scale.Z;
+
+                    // Appliquer la nouvelle position au sommet
+                    mesh.Vertices[j * 3] = x;
+                    mesh.Vertices[j * 3 + 1] = y;
+                    mesh.Vertices[j * 3 + 2] = z;
+                }
             }
         }
 

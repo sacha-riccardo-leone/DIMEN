@@ -25,6 +25,7 @@ namespace DIMEN
         public bool DoorExtended;
         public readonly Vector3 Scale;
 
+        // Obstacle avec porte
         public Obstacle(string materialPath, string doorMaterialPath, string modelPath, Vector3 dimensions, Vector3 position, Vector3 doorDimensions, string openDoorModelPath, string closedDoorModelPath, float groundLevel)
         {
             Material = new PBRMaterial(materialPath);
@@ -43,46 +44,36 @@ namespace DIMEN
             IsDoorOpen = false;
             DoorExtended = false;
 
-            // Ajustement de la hauteur pour que l'obstacle repose bien au sol
+            // Ajustement de la hauteur de l'obstacle
             Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
-
             Center = Position;
             HalfSize = Dimensions / 2;
-
             Box = new BoundingBox(Position - HalfSize, Position + HalfSize);
-
-            // Ajustement de la hauteur de la porte pour qu'elle soit au sol
+            // Ajustement de la hauteur de la porte
             DoorPosition = new Vector3(
-                Center.X,  // Aligné avec l'obstacle
-                GroundLevel + DoorDimensions.Y / 2, // La base de la porte touche le sol
-                Center.Z - HalfSize.Z // Placée sur la face arrière de l'obstacle
+                Center.X,
+                GroundLevel + DoorDimensions.Y / 2,
+                Center.Z - HalfSize.Z
             );
-
-
             DoorBox = new BoundingBox(DoorPosition - DoorDimensions / 2, DoorPosition + DoorDimensions / 2);
 
             // Calcul de la taille du modèle
             BoundingBox tempBox = GetModelBoundingBox(Model);
             Vector3 modelsize = tempBox.Max - tempBox.Min;
-
-            // Calcul du facteur d'échelle en fonction de la bounding box
+            // Calcul du facteur d'échelle
             Vector3 boxSize = Box.Max - Box.Min;
             Vector3 scale = boxSize / modelsize;
 
-            // Appliquer l'échelle au modèle
             Scale = scale;
-
-            // Appliquer la mise à l'échelle sur le modèle
             SetModelScale(Model, scale);
             SetModelScale(OpenDoorModel, scale);
             SetModelScale(ClosedDoorModel, scale);
         }
-
+        // Obstacle sans porte
         public Obstacle(string obstacleMaterialPath,string obstacleModelPath, Vector3 dimensions, Vector3 position,   float groundLevel)
         {
             Material = new PBRMaterial(obstacleMaterialPath);
             Model = LoadModel(obstacleModelPath);
-
 
             InitModels(Model, Material);
             InitModels(OpenDoorModel, DoorMaterial);
@@ -91,28 +82,20 @@ namespace DIMEN
             Dimensions = dimensions;
             GroundLevel = groundLevel;
             IsDoorOpen = false;
-
-            // Ajustement de la hauteur pour que l'obstacle repose bien au sol
+            // Ajustement de la hauteur de l'obstacle
             Position = new Vector3(position.X, GroundLevel + Dimensions.Y / 2, position.Z);
-
             Center = Position;
             HalfSize = Dimensions / 2;
-
             Box = new BoundingBox(Position - HalfSize, Position + HalfSize);
-
 
             // Calcul de la taille du modèle
             BoundingBox tempBox = GetModelBoundingBox(Model);
             Vector3 modelsize = tempBox.Max - tempBox.Min;
-
-            // Calcul du facteur d'échelle en fonction de la bounding box
+            // Calcul du facteur d'échelle
             Vector3 boxSize = Box.Max - Box.Min;
             Vector3 scale = boxSize / modelsize;
 
-            // Appliquer l'échelle au modèle
             Scale = scale;
-
-            // Appliquer la mise à l'échelle sur le modèle
             SetModelScale(Model, scale);
         }
 
@@ -132,8 +115,6 @@ namespace DIMEN
                 model.Materials[0] = material.Material;
             }
         }
-
-        // Nouvelle fonction pour appliquer l'échelle au modèle
         public unsafe void SetModelScale(Model model, Vector3 scale)
         {
             // Applique la mise à l'échelle sur chaque sommet du modèle

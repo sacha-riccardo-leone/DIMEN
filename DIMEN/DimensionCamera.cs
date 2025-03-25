@@ -10,19 +10,18 @@ namespace DIMEN
         public Vector3 PlayerPosition { get; set; }
         public float Radians { get; set; }
         public Vector3 MoveDirection { get; set; }
-
         private Camera3D targetCamera;
         private float transitionTime;
         private float transitionDuration;
-        private bool isTopView; // Suivre l'état actuel de la caméra (vue par défaut ou vue du dessus)
+        private bool isTopView;
 
         public DimensionCamera()
         {
             Camera = DefaultPosition();
-            targetCamera = Camera; // Initialement, la caméra cible est la même que la caméra actuelle
-            isTopView = false; // La vue initiale est par défaut
+            targetCamera = Camera; 
+            isTopView = false;
             transitionTime = 0.0f;
-            transitionDuration = 0.5f; // Durée de la transition
+            transitionDuration = 0.5f; 
         }
 
         public Camera3D DefaultPosition()
@@ -55,7 +54,6 @@ namespace DIMEN
                 Projection = CameraProjection.Orthographic
             };
 
-            // Commence la transition en ajustant le temps
             transitionTime = 0.0f;
             return targetCamera;
         }
@@ -63,23 +61,21 @@ namespace DIMEN
         // Méthode pour alterner entre les vues
         public void ToggleCameraView()
         {
-            isTopView = !isTopView; // Alterne l'état de la caméra
+            isTopView = !isTopView;
             if (isTopView)
             {
-                targetCamera = TopViewPosition(); // Passer à la vue top
+                targetCamera = TopViewPosition();
             }
             else
             {
-                targetCamera = DefaultPosition(); // Revenir à la vue par défaut
+                targetCamera = DefaultPosition();
             }
 
-            // Réinitialiser le temps de transition
             transitionTime = 0.0f;
         }
 
         public void UpdateCamera(float deltaTime)
         {
-            // Interpoler entre les positions si une transition est en cours
             if (transitionTime < transitionDuration)
             {
                 transitionTime += deltaTime;
@@ -91,7 +87,7 @@ namespace DIMEN
                 Camera.Target = Vector3.Lerp(Camera.Target, targetCamera.Target, transitionProgress);
                 Camera.Up = Vector3.Lerp(Camera.Up, targetCamera.Up, transitionProgress);
                 Camera.FovY = Raymath.Lerp(Camera.FovY, targetCamera.FovY, transitionProgress);
-                Camera.Projection = targetCamera.Projection; // Laisser la projection changer instantanément
+                Camera.Projection = targetCamera.Projection;
             }
         }
     }

@@ -37,12 +37,12 @@ namespace DIMEN
 
             if (Position.Y > GroundLevel)
             {
-                Velocity.Y += gravity * deltaTime; // Accumulation progressive de la vitesse de chute
+                Velocity.Y += gravity * deltaTime;
             }
             else
             {
-                Velocity.Y = 0f; // Arrêter la chute
-                Position.Y = GroundLevel; // Ajuster la position pour coller au sol
+                Velocity.Y = 0f;
+                Position.Y = GroundLevel; 
             }
 
             if (Velocity.Y < gravity)
@@ -58,7 +58,7 @@ namespace DIMEN
             if (IsKeyDown(KeyboardKey.A)) movement += strafeDirection;
             if (IsKeyDown(KeyboardKey.D)) movement -= strafeDirection;
 
-            // Normalisation pour éviter un déplacement plus rapide en diagonale
+            // Normalisation
             if (movement != Vector3.Zero)
             {
                 movement = Raymath.Vector3Normalize(movement) * Speed;
@@ -67,10 +67,10 @@ namespace DIMEN
             }
             else
             {
-                Brake(); // Applique un freinage progressif quand aucune touche n'est pressée
+                Brake(); // Freinage progressif
             }
 
-            // Mise à jour de la position avec deltaTime pour une physique plus fluide
+            // Mise à jour de la position
             Position += Velocity * deltaTime;
 
             // Mise à jour de la hitbox
@@ -82,11 +82,11 @@ namespace DIMEN
         }
         private void Brake()
         {
-            float deceleration = 0.9f; // Freinage plus naturel
+            float deceleration = 0.9f;
             Velocity.X *= deceleration;
             Velocity.Z *= deceleration;
 
-            // Éviter les valeurs proches de zéro qui pourraient causer un mouvement résiduel
+            // Éviter les valeurs proches de zéro
             if (Math.Abs(Velocity.X) < 0.01f) Velocity.X = 0f;
             if (Math.Abs(Velocity.Z) < 0.01f) Velocity.Z = 0f;
             
@@ -176,15 +176,15 @@ namespace DIMEN
             {
                 if (CheckCollisionBoxes(Box, plaque.Box))
                 {
-                    float compressionAmount = 0.1f; // Hauteur de réduction
+                    float compressionAmount = 0.1f;
 
                     if (plaque.IsPressed)
                     {
-                        plaque.Box.Max.Y = plaque.OriginalMaxY - compressionAmount; // Réduit la hauteur
+                        plaque.Box.Max.Y = plaque.OriginalMaxY - compressionAmount;
                     }
                     else
                     {
-                        plaque.Box.Max.Y = plaque.OriginalMaxY; // Remet la hauteur initiale
+                        plaque.Box.Max.Y = plaque.OriginalMaxY;
                     }
                    
                     if (CheckCollisionBoxes(Box, plaque.PressBox))
@@ -193,7 +193,7 @@ namespace DIMEN
                     }
 
                     Position.Y = plaque.Box.Max.Y + Dimensions.Y / 2;
-                    Velocity.Y = 0; // Stoppe la gravité
+                    Velocity.Y = 0;
                     break;
                 }
             }

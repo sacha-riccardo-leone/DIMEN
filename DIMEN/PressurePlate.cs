@@ -21,44 +21,31 @@ namespace DIMEN
         public MovableCube PressableBy;
         public PressurePlate(string pressedModelPath, string unpressedModelPath, string materialPath, Vector3 dimensions, Vector3 position, MovableCube pressableBy)
         {
-            // Qui peut presser la plaque
             PressableBy = pressableBy;
 
-            // Charger les modèles
             Model = LoadModel(unpressedModelPath);
             PressedModel = LoadModel(pressedModelPath);
-
-            // Charger le matériau et l'appliquer aux modèles
             Material = new PBRMaterial(materialPath);
             InitModels(Model, Material);
             InitModels(PressedModel, Material);
 
-            // Définir les dimensions et la position initiale
             Dimensions = dimensions;
             Position = new Vector3(position.X, position.Y, position.Z);
-
             HalfSize = Dimensions / 2;
 
-            // Calcul de la bounding box du modèle avant l'échelle
             BoundingBox rawModelBox = GetModelBoundingBox(Model);
             Vector3 rawModelSize = rawModelBox.Max - rawModelBox.Min;
+            Vector3 boxSize = Dimensions;
 
-            // Calcul du facteur d'échelle pour adapter le modèle à la bounding box
-            Vector3 boxSize = Dimensions; // Dimensions déjà définies comme taille cible
             Scale = boxSize / rawModelSize;
-
-            // Appliquer la mise à l'échelle au modèle
             SetModelScale(Model, Scale);
             SetModelScale(PressedModel, Scale);
 
-            // Recalculer la BoundingBox après mise à l'échelle
             Vector3 scaledMin = rawModelBox.Min * Scale;
             Vector3 scaledMax = rawModelBox.Max * Scale;
+
             Box = new BoundingBox(Position + scaledMin, Position + scaledMax);
-
             OriginalMaxY = Box.Max.Y;
-
-            // Ajustement de la bounding box de pression (plus petite)
             Vector3 pressOffset = new Vector3(0.2f, 0.0025f, 0.2f);
             PressBox = new BoundingBox(Box.Min + pressOffset, Box.Max - pressOffset);
         }

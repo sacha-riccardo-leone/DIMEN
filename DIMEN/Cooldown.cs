@@ -30,7 +30,7 @@ namespace DIMEN
                     filling = true;
                 }
 
-                if (timer >= Duration) // Désactivation automatique après la durée
+                if (timer >= Duration)
                 {
                     IsTopView = false;
                     filling = true;
@@ -45,8 +45,7 @@ namespace DIMEN
                     Progress = 1.0f;
                     filling = false;
                 }
-            }
-            
+            } 
         }
 
         public void ToggleView()

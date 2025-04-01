@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DIMEN")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5d9591e34ab23f5c7b471a6d60c4a068bb9a8942")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ce872d2977b9a5c03f623299b37b611ce8fd2b2e")]
 [assembly: System.Reflection.AssemblyProductAttribute("DIMEN")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DIMEN")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
